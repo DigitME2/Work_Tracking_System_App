@@ -1,0 +1,161 @@
+<resources>
+    <string name="app_name">WTS Scanner</string>
+    <string name="user_id_placeholder_text">Scan a User Id</string>
+    <string name="job_id_placeholder_text">Scan a Job Id</string>
+    <string name="job_id_label">Job Id:</string>
+    <string name="user_id_label">User Id:</string>
+    <string name="station_label">Station:</string>
+    <string name="send">Send</string>
+    <string name="title_activity_settings">Settings</string>
+    <string name="server_client_input_path">/timelogger/scripts/server/client_input.php</string>
+    <string name="server_stations_path">/timelogger/scripts/server/scanners.php</string>
+    <string name="default_user_prefix">user_</string>
+    <string name="default_product_prefix">prdt_</string>
+
+
+    <!-- Example General settings -->
+    <string name="pref_header_general">General</string>
+
+    <string name="pref_title_social_recommendations">Enable social recommendations</string>
+    <string name="pref_description_social_recommendations">Recommendations for people to contact
+        based on your message history
+    </string>
+
+    <string name="pref_title_display_name">Display name</string>
+    <string name="pref_default_display_name">John Smith</string>
+
+    <string name="pref_title_add_friends_to_messages">Add friends to messages</string>
+    <string-array name="pref_example_list_titles">
+        <item>Always</item>
+        <item>When possible</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_example_list_values">
+        <item>1</item>
+        <item>0</item>
+        <item>-1</item>
+    </string-array>
+
+    <!-- Example settings for Data & Sync -->
+    <string name="pref_header_data_sync">Data &amp; sync</string>
+
+    <string name="pref_title_sync_frequency">Sync frequency</string>
+    <string-array name="pref_sync_frequency_titles">
+        <item>15 minutes</item>
+        <item>30 minutes</item>
+        <item>1 hour</item>
+        <item>3 hours</item>
+        <item>6 hours</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="pref_sync_frequency_values">
+        <item>15</item>
+        <item>30</item>
+        <item>60</item>
+        <item>180</item>
+        <item>360</item>
+        <item>-1</item>
+    </string-array>
+
+
+    <string-array name="list_preference_entries">
+        <item>Entry 1</item>
+        <item>Entry 2</item>
+        <item>Entry 3</item>
+    </string-array>
+
+    <string-array name="list_preference_entry_values">
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+
+    <string-array name="list_work_status_values">
+        <item>workInProgress</item>
+        <item>stageComplete</item>
+        <item>complete</item>
+    </string-array>
+
+    <string-array name="list_work_status">
+        <item>Work in Progress</item>
+        <item>Stage Complete</item>
+        <item>Complete</item>
+    </string-array>
+
+    <string-array name="multi_select_list_preference_default_value" />
+
+    <string name="pref_title_system_sync_settings">System sync settings</string>
+
+    <!-- Example settings for Notifications -->
+    <string name="pref_header_notifications">Notifications</string>
+
+    <string name="pref_title_new_message_notifications">New message notifications</string>
+
+    <string name="pref_title_ringtone">Ringtone</string>
+    <string name="pref_ringtone_silent">Silent</string>
+
+    <string name="pref_title_vibrate">Vibrate</string>
+    <string name="action_settings">Settings</string>
+    <string name="serverIpAddress">Server IP Address</string>
+    <string name="serverPort">Server Port</string>
+    <string name="preferences_file_key" translatable="false">com.admt.barcodereader.prefs</string>
+    <string name="preferences_server_address" translatable="false">serverAddress</string>
+    <string name="preferences_server_port" translatable="false">serverPort</string>
+    <string name="preferences_password" translatable="false">password</string>
+    <string name="preferences_use_front_camera" translatable="false">useFrontCamera</string>
+    <string name="preferences_rework_level_1_name" translatable="false">reworkLevel1Name</string>
+    <string name="preferences_rework_level_2_name" translatable="false">reworkLevel2Name</string>
+    <string name="preferences_rework_level_3_name" translatable="false">reworkLevel3Name</string>
+    <string name="preferences_station_name" translatable="false">stationName</string>
+    <string name="preferences_stationIds" translatable="false">stationIds</string>
+    <string name="preferences_staticStation" translatable="false">staticStation</string>
+    <string name="preferences_user_prefix" translatable="false">userPrefix</string>
+    <string name="preferences_product_prefix" translatable="false">productPrefix</string>
+    <string name="preferences_quantity_complete" translatable="false">quantityComplete</string>
+    <string name="title_activity_settings_password_screen">settingsPasswordScreen</string>
+    <string name="enter_password">Enter Password</string>
+    <string name="settings_password">Settings Password</string>
+    <string name="settings_rework_1">Rework level 1 name</string>
+    <string name="settings_rework_2">Rework level 2 name</string>
+    <string name="settings_rework_3">Rework level 3 name</string>
+    <string name="settings_station_name">Default Station</string>
+    <string name="setCamera">Camera</string>
+    <string name="preferences_state" translatable="false">preferencesState</string>
+    <string-array name="camera_selection_options">
+        <item>Front Camera</item>
+        <item>Rear Camera</item>
+    </string-array>
+
+    <string name="manual_input">Manual Input</string>
+    <string name="torch_light">Torch Light</string>
+    <string name="static_station">Static Station</string>
+    <string name="remember_user">Remember User</string>
+    <string name="user_prefix_label">User Prefix</string>
+    <string name="job_prefix_label">Job Prefix</string>
+    <string name="quantity_complete_pref_label" translatable="false">Record Quantity Complete</string>
+    <string name="product_prefix_label">Product Prefix</string>
+    <string name="default_station_hint">Default Station</string>
+    <string name="user_prefix_hint">User Prefix</string>
+    <string name="job_prefix_hint">Job Prefix</string>
+    <string name="hint">Product Prefix</string>
+    <string name="SettingsNewPasswordHint">New Password</string>
+    <string name="ServerURLLabel">Server IP Address</string>
+    <string name="job_status_label">Status:</string>
+
+    <string name="quantity_complete_alert_message">Enter Quantity Complete-</string>
+
+    <!-- Preference Titles -->
+    <string name="messages_header">Messages</string>
+    <string name="sync_header">Sync</string>
+
+    <!-- Messages Preferences -->
+    <string name="signature_title">Your signature</string>
+    <string name="reply_title">Default reply action</string>
+
+    <!-- Sync Preferences -->
+    <string name="sync_title">Sync email periodically</string>
+    <string name="attachment_title">Download incoming attachments</string>
+    <string name="attachment_summary_on">Automatically download attachments for incoming emails
+    </string>
+    <string name="attachment_summary_off">Only download attachments when manually requested</string>
+</resources>

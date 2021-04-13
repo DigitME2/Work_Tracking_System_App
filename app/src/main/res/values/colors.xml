@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+    <color name="colorSecond">#be0f34</color>
+    <color name="colorTextSecond">#fff</color>
+    <color name="colorSubmitBackground">#be0f34</color>
+    <color name="colorSubmitBackgroundDisabled">#d6a9b3</color>
+    <color name="colorSubmitBackgroundPressed">#990b29</color>
+    <color name="colorSubmitBackgroundfocused">#a30a2a</color>
+    <color name="colorSubmit">#fff</color>
+    <color name="torchOn">#f5f253</color>
+</resources>

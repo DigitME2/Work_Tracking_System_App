@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.admt.barcodereader.settings_page"
+    tools:layout_editor_absoluteY="25dp">
+
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:elevation="4dp"
+        android:theme="@style/ToolbarTheme"
+        app:layout_constraintTop_toTopOf="parent"
+        app:popupTheme="@style/ThemeOverlay.AppCompat.Light" />
+
+    <Button
+        android:id="@+id/btnOk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="@color/colorSubmitBackground"
+        android:onClick="onBtnOkClicked"
+        android:text="@android:string/ok"
+        android:textColor="@color/colorSubmit"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintRight_toRightOf="parent" />
+
+    <ScrollView
+        android:id="@+id/svSettingsScroll"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="1dp"
+        android:layout_marginBottom="8dp"
+        app:layout_constraintBottom_toTopOf="@+id/btnOk"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar">
+
+        <LinearLayout
+            android:id="@+id/scrollLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:descendantFocusability="beforeDescendants"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvServerURL"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/ServerURLLabel"
+                tools:text="@string/ServerURLLabel" />
+
+            <EditText
+                android:id="@+id/tbServerURL"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/ServerURLLabel"
+                android:importantForAutofill="no"
+                android:inputType="textUri" />
+
+            <TextView
+                android:id="@+id/tvCameraSelect"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:labelFor="@id/tbSettingsPassword"
+                android:text="@string/setCamera" />
+
+            <Spinner
+                android:id="@+id/spCameraSelect"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/camera_selection_options" />
+
+            <TextView
+                android:id="@+id/tvSettingsPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_password" />
+
+            <EditText
+                android:id="@+id/tbSettingsPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ems="10"
+                android:hint="@string/SettingsNewPasswordHint"
+                android:importantForAutofill="no"
+                android:inputType="textPassword" />
+
+            <Switch
+                android:id="@+id/swStaticStation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/static_station" />
+
+            <TextView
+                android:id="@+id/tvDefaultStation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/settings_station_name" />
+
+            <Spinner
+                android:id="@+id/spDefaultStation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <Switch
+                android:id="@+id/swRememberUser"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/remember_user" />
+
+            <Switch
+                android:id="@+id/swQuantityComplete"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/quantity_complete_pref_label" />
+
+            <TextView
+                android:id="@+id/tvProductPrefixLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:labelFor="@id/tbSettingsPassword"
+                android:text="@string/product_prefix_label" />
+
+            <EditText
+                android:id="@+id/tbProductIdPrefix"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/hint"
+                android:importantForAutofill="no"
+                android:inputType="textShortMessage" />
+
+            <TextView
+                android:id="@+id/tvUserPrefixLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:labelFor="@id/tbSettingsPassword"
+                android:text="@string/user_prefix_label" />
+
+            <EditText
+                android:id="@+id/tbUserIdPrefix"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/user_prefix_hint"
+                android:importantForAutofill="no"
+                android:inputType="textShortMessage" />
+
+        </LinearLayout>
+    </ScrollView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
