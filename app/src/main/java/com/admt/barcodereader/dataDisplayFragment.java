@@ -429,7 +429,10 @@ public class dataDisplayFragment extends Fragment
             String userPrefix = preferences.getString(
                     "userPrefix","");
 
-            String prefix = barcodeValue.substring(0, 5);
+            String prefix = "";
+            if(barcodeValue.length() >= 5) {
+                prefix = barcodeValue.substring(0, 5);
+            }
 
             if (prefix.equals(userPrefix))
             {
@@ -788,7 +791,7 @@ public class dataDisplayFragment extends Fragment
             String serverUrl = "http://" + ipAddress + path;
 
             Map<String,String> params = new HashMap<String, String>();
-            params.put("request", "getConnectedClients");
+            params.put("request", "getAllScannerNames");
 
             Log.d(TAG, "Parameters- " + params);
 
@@ -804,17 +807,17 @@ public class dataDisplayFragment extends Fragment
                         public void onResponse(JSONObject response) {
                             Log.d(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: ");
 
-                            String result = "";
+                            String status = "";
 
                             try {
-                                result = response.getString("status");
+                                status = response.getString("status");
                             } catch (JSONException e) {
                                 e.printStackTrace();
                             }
 
-                            if (result.equals("success")) {
+                            if (status.equals("success")) {
                                 try {
-
+                                    
                                     JSONArray jsonStations = response.getJSONArray("result");
 
                                     JSONObject stationArray;
@@ -823,8 +826,9 @@ public class dataDisplayFragment extends Fragment
                                     Log.d(TAG, "Got updated Station list");
                                     for (int i = 0, size = jsonStations.length(); i < size; i++)
                                     {
-                                        stationArray = jsonStations.getJSONObject(i);
-                                        stationList.add(stationArray.getString("stationId"));
+                                        //stationArray = jsonStations.getJSONObject(i);
+                                        //stationList.add(stationArray.getString("stationId"));
+                                        stationList.add(jsonStations.getString(i));
                                     }
 
                                     SharedPreferences prefs = getContext().getSharedPreferences(

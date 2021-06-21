@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     signingConfigs {
         myconfig {
-            storeFile file('C:\\Users\\gotow\\Documents\\StudioKeyStore\\WTS_key.jks')
+            storeFile file('keys.jks')
             storePassword 'digitme'
             keyAlias = 'key0'
             keyPassword 'digitme'
