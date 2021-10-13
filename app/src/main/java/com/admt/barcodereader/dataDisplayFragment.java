@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Vibrator;
 
+
 import androidx.appcompat.app.AlertDialog;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
@@ -207,7 +208,7 @@ public class dataDisplayFragment extends Fragment
         mRequestQueue.start();
         initServerCheckTimer();
         mServerCheckTimer = new Timer();
-        mServerCheckTimer.schedule(mServerCheckTimerTask, 1000,15000);
+        mServerCheckTimer.schedule(mServerCheckTimerTask, 1000,5000);
     }
 
     private void initServerCheckTimer()
@@ -217,6 +218,7 @@ public class dataDisplayFragment extends Fragment
             @Override
             public void run()
             {
+                Log.d(TAG, "run: checking server connectivity");
                 SharedPreferences preferences = getContext().getSharedPreferences(
                         getString(R.string.preferences_file_key),
                         Context.MODE_PRIVATE);
@@ -244,15 +246,15 @@ public class dataDisplayFragment extends Fragment
                     mainHandler.post(runnable);
                 }
                 else {
-                    //check server connected by sending heartbeat, every 50 heartbeats update stations
-                    if (mHeartbeatCounter <1){
+                    //check server connected by sending heartbeat, every 10 heartbeats update stations
+                    if (mHeartbeatCounter == 0){
                         setStations();
                     }else {
                         String serverAddress = getUrlFromIpAddress(ipAddress);
                         checkServerConnected(serverAddress);
                     }
                     mHeartbeatCounter++;
-                    if (mHeartbeatCounter > 50){
+                    if (mHeartbeatCounter > 10){
                         mHeartbeatCounter = 0;
                     }
                 }
@@ -262,10 +264,33 @@ public class dataDisplayFragment extends Fragment
 
     private void checkServerConnected(String url)
     {
-
         if(isConnectedToWifiNetwork())
         {
-            url = url + "?request=heartbeat";
+            SharedPreferences prefs =getContext().getSharedPreferences(
+                    getString(R.string.preferences_file_key), Context.MODE_PRIVATE);
+            String appVersion =  getString(R.string.app_version);
+
+            Spinner spStationIdValue = (Spinner)(getActivity().findViewById(R.id.spStationIdValue));
+            // the station location is used by default, and the display name is used as a fallback
+            // This might need reworking, but let's see how it goes
+            String appIdentifierName = "";
+            String nameType = "location";
+            if (spStationIdValue.getSelectedItem() != null)
+                appIdentifierName = spStationIdValue.getSelectedItem().toString();
+
+            if(appIdentifierName == "")
+            {
+                appIdentifierName = prefs.getString(
+                        getString(R.string.preferences_app_id_name),
+                        getString(R.string.default_app_id_name)
+                );
+                nameType = "appId";
+            }
+            url = url + "?request=heartbeat&stationId=" + appIdentifierName +
+                    "&isApp=true&version=" + appVersion +
+                    "&nameType=" + nameType;
+
+
             Log.d(TAG, "checkServerConnected: Attempting to get server heartbeat at " + url);
 
             StringRequest request = new StringRequest(Request.Method.GET, url,

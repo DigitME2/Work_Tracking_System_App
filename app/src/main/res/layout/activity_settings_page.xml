@@ -151,6 +151,21 @@
                 android:importantForAutofill="no"
                 android:inputType="textShortMessage" />
 
+            <TextView
+                android:id="@+id/tvAppIdentifierLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:labelFor="@id/tbSettingsPassword"
+                android:text="@string/app_id_name_label" />
+
+            <EditText
+                android:id="@+id/tbAppIdentifierName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="@string/app_id_name_hint"
+                android:importantForAutofill="no"
+                android:inputType="textShortMessage" />
+
         </LinearLayout>
     </ScrollView>
 

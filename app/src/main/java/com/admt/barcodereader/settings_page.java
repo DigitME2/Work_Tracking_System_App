@@ -44,6 +44,7 @@ public class settings_page extends AppCompatActivity
         Switch swQuantityComplete = (Switch)findViewById(R.id.swQuantityComplete);
         EditText tbUserIdPrefix = (EditText)findViewById(R.id.tbUserIdPrefix);
         EditText tbProductIdPrefix = (EditText)findViewById(R.id.tbProductIdPrefix);
+        EditText tbAppIdentifierName = (EditText)findViewById(R.id.tbAppIdentifierName);
 
 
         SharedPreferences prefs = getSharedPreferences(
@@ -67,6 +68,8 @@ public class settings_page extends AppCompatActivity
                 getString(R.string.preferences_user_prefix), getString(R.string.default_user_prefix));
         String productPrefix = prefs.getString(
                 getString(R.string.preferences_product_prefix), getString(R.string.default_product_prefix));
+        String appIdentifierName = prefs.getString(
+                getString(R.string.preferences_app_id_name), getString(R.string.default_app_id_name));
         Set<String> stationSet = prefs.getStringSet(
                 getString(R.string.preferences_stationIds), new HashSet<String>());
         tbServerURL.setText(serverAddress);
@@ -95,6 +98,7 @@ public class settings_page extends AppCompatActivity
         swQuantityComplete.setChecked(quantityComplete);
         tbUserIdPrefix.setText(userPrefix);
         tbProductIdPrefix.setText(productPrefix);
+        tbAppIdentifierName.setText(appIdentifierName);
     }
 
     public void onBtnOkClicked(View v)
@@ -111,6 +115,7 @@ public class settings_page extends AppCompatActivity
         Switch swQuantityComplete = (Switch)findViewById(R.id.swQuantityComplete);
         EditText tbUserIdPrefix = (EditText)findViewById(R.id.tbUserIdPrefix);
         EditText tbProductIdPrefix = (EditText)findViewById(R.id.tbProductIdPrefix);
+        EditText tbAppIdName = (EditText)findViewById(R.id.tbAppIdentifierName);
 
         int camOptionSelection = spCameraSelect.getSelectedItemPosition();
         boolean useFrontCamera = true;
@@ -131,6 +136,7 @@ public class settings_page extends AppCompatActivity
 
         String userPrefix = tbUserIdPrefix.getText().toString();
         String productPrefix = tbProductIdPrefix.getText().toString();
+        String appIdName = tbAppIdName.getText().toString();
 
         //if static station confirm that a default station has been selected
         if (staticStation && stationName.equals(""))
@@ -151,6 +157,7 @@ public class settings_page extends AppCompatActivity
             editor.putBoolean(getString(R.string.preferences_quantity_complete), quantityComplete);
             editor.putString("userPrefix", userPrefix);
             editor.putString("productPrefix", productPrefix);
+            editor.putString(getString(R.string.preferences_app_id_name), appIdName);
             editor.commit();
 
             Intent intent = new Intent(this, MainActivity.class);

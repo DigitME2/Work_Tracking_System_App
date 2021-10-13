@@ -125,6 +125,7 @@
         <item>Front Camera</item>
         <item>Rear Camera</item>
     </string-array>
+    <string name="preferences_app_id_name">appIdName</string>
 
     <string name="manual_input">Manual Input</string>
     <string name="torch_light">Torch Light</string>
@@ -141,8 +142,13 @@
     <string name="SettingsNewPasswordHint">New Password</string>
     <string name="ServerURLLabel">Server IP Address</string>
     <string name="job_status_label">Status:</string>
+    <string name="app_id_name_label">App ID name (used if station name not set)</string>
+    <string name="app_id_name_hint">App identifying name</string>
+    <string name="default_app_id_name">WorkTrackingApp</string>
 
     <string name="quantity_complete_alert_message">Enter Quantity Complete-</string>
+
+    <string name="app_version">App_V1.0</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>

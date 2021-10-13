@@ -131,7 +131,7 @@ public class cameraFragment extends Fragment
      */
     private class BarcodeProcessor
     {
-        private long mDelayMillis = 1000; //ten seconds before another code can be scanned
+        private long mDelayMillis = 1000; // before another code can be scanned
         private long mDelayTimeoutEndMillis = 0;
 
         public void receiveDetections(SparseArray<Barcode> detections)
