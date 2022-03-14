@@ -65,6 +65,8 @@ public class dataDisplayFragment extends Fragment
     private Timer mServerCheckTimer = null;
     private onDataDisplayInteraction mDataDisplayInteracionCallback = null;
     private int mHeartbeatCounter = 0;
+    private boolean isInStoppageMode = false;
+    private HashMap<String, String> mStoppageReasons;
 
     // Not used in all places anymore, values got directly from text boxes, Maybe change??
     private class jobReworkData
@@ -117,7 +119,7 @@ public class dataDisplayFragment extends Fragment
         mRequestQueue = Volley.newRequestQueue(getContext());
         MainActivity mainActivity = (MainActivity)getActivity();
         mDataDisplayInteracionCallback  = (onDataDisplayInteraction) mainActivity;
-
+        mStoppageReasons = new HashMap<String, String>();
     }
 
     @Override
@@ -249,6 +251,7 @@ public class dataDisplayFragment extends Fragment
                     //check server connected by sending heartbeat, every 10 heartbeats update stations
                     if (mHeartbeatCounter == 0){
                         setStations();
+                        getStoppageReasons();
                     }else {
                         String serverAddress = getUrlFromIpAddress(ipAddress);
                         checkServerConnected(serverAddress);
@@ -929,6 +932,121 @@ public class dataDisplayFragment extends Fragment
                 public String getBodyContentType() {
                 return "application/x-www-form-urlencoded; charset=UTF-8";
             }
+            };
+            Log.d(TAG, "Request URL-" + request.getUrl());
+            //request.setShouldCache(false);
+            mRequestQueue.add(request);
+        }
+    }
+
+    public void getStoppageReasons(){
+
+        SharedPreferences preferences = getContext().getSharedPreferences(
+                getString(R.string.preferences_file_key),
+                Context.MODE_PRIVATE);
+        String ipAddress = preferences.getString(
+                "serverURL","");
+
+        if(ipAddress == "")
+        {
+            return;
+        }
+        else{
+
+            String path = getResources().getString(R.string.server_stoppages_path);
+
+            String serverUrl = "http://" + ipAddress + path;
+
+            Map<String,String> params = new HashMap<String, String>();
+            params.put("request", "getStoppageReasonTableData");
+            params.put("tableOrdering", "byAlphabetic");
+
+            Log.d(TAG, "Parameters- " + params);
+
+            String uri = buildUri(serverUrl, params);
+
+            Log.d(TAG, "Server Address" + uri);
+
+            Log.d(TAG, "*****************************************************");
+
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, uri, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            Log.d(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: ");
+
+                            String status = "";
+
+                            try {
+                                status = response.getString("status");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            if (status.equals("success")) {
+                                try {
+
+                                    JSONArray jsonReasonsArray = response.getJSONArray("result");
+                                    JSONObject jsonStoppageReason;
+
+                                    mStoppageReasons.clear();
+
+                                    for (int i = 0, size = jsonReasonsArray.length(); i < size; i++)
+                                    {
+                                        jsonStoppageReason = jsonReasonsArray.getJSONObject(i);
+                                        mStoppageReasons.put(
+                                                jsonStoppageReason.getString("stoppageReasonId"),
+                                                jsonStoppageReason.getString("stoppageReasonName")
+                                        );
+                                    }
+
+                                    Log.d(TAG, "Got updated stoppages list");
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            } else {
+
+                                String screenMsg = null;
+                                try {
+                                    screenMsg = "Error- " + response.getString("result");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+
+                                    screenMsg = "Error requesting stoppages";
+                                }
+
+                                Toast.makeText(getContext(),
+                                        screenMsg,
+                                        Toast.LENGTH_LONG)
+                                        .show();
+                                Log.d(TAG, "$$ Error requesting stoppages- "+ screenMsg);
+                            }
+
+                            //TODO: fill in response functionality
+
+                            Log.d(TAG, "Attempted to retrieve stoppages" + response.toString());
+
+                            mDataDisplayInteracionCallback.onBarcodeReadHandled();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            handleRequestError(error);
+                        }
+                    }) {
+                @Override
+                public Map<String, String> getParams()//ToDo not working, replaced with buildUri method
+                {
+                    return null;
+                }
+
+                @Override
+                public String getBodyContentType() {
+                    return "application/x-www-form-urlencoded; charset=UTF-8";
+                }
             };
             Log.d(TAG, "Request URL-" + request.getUrl());
             //request.setShouldCache(false);

@@ -9,8 +9,10 @@
     <string name="title_activity_settings">Settings</string>
     <string name="server_client_input_path">/timelogger/scripts/server/client_input.php</string>
     <string name="server_stations_path">/timelogger/scripts/server/scanners.php</string>
+    <string name="server_stoppages_path">/timelogger/scripts/server/stoppages.php</string>
     <string name="default_user_prefix">user_</string>
     <string name="default_product_prefix">prdt_</string>
+    <string name="default_stoppage_prefix">stpg_</string>
 
 
     <!-- Example General settings -->
