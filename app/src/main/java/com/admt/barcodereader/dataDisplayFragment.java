@@ -45,6 +45,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -65,8 +66,9 @@ public class dataDisplayFragment extends Fragment
     private Timer mServerCheckTimer = null;
     private onDataDisplayInteraction mDataDisplayInteracionCallback = null;
     private int mHeartbeatCounter = 0;
-    private boolean isInStoppageMode = false;
+    private boolean mIsInStoppageMode = false;
     private HashMap<String, String> mStoppageReasons;
+    private String mStoppageId = null;
 
     // Not used in all places anymore, values got directly from text boxes, Maybe change??
     private class jobReworkData
@@ -404,11 +406,26 @@ public class dataDisplayFragment extends Fragment
         }
     }
 
+    private void setJobStatusOptions(ArrayList<String> optionList){
+        Spinner spinner;
+        spinner = (Spinner) (getActivity().findViewById(R.id.spJobStatus));
+
+        Context thisContext = getContext();
+
+        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(
+                thisContext, android.R.layout.simple_spinner_item, optionList);
+        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(arrayAdapter);
+
+        spinner.setSelection(0);
+    }
+
     /**
      * Sets the code displayed in the tbUserIdValue text box
      */
     void setDisplayedUserIdValue(final String newUserIdValue)
     {
+        mIsInStoppageMode = false;
         // Get a handler that can be used to post to the main thread
         Handler mainHandler = new Handler(getContext().getMainLooper());
 
@@ -416,8 +433,16 @@ public class dataDisplayFragment extends Fragment
             @Override
             public void run()
             {
+                ArrayList<String> statusNames = new ArrayList<>(
+                        Arrays.asList(getResources().getStringArray(R.array.list_work_status))
+                );
+                setJobStatusOptions(statusNames);
                 TextView tbUserIdValue = (TextView) (getActivity()
                         .findViewById(R.id.tbUserIdValue));
+
+                TextView tvUserIdLabel = (TextView)(getActivity().findViewById(R.id.tvUserIdLable));
+                String userIdLabel = getResources().getString(R.string.user_id_label);
+                tvUserIdLabel.setText(userIdLabel);
 
                 tbUserIdValue.setText(newUserIdValue);
             }
@@ -446,8 +471,43 @@ public class dataDisplayFragment extends Fragment
         mainHandler.post(myRunnable);
     }
 
+    void setDisplayedStoppageName(final String newStoppageName)
+    {
+        // Get a handler that can be used to post to the main thread
+        Handler mainHandler = new Handler(getContext().getMainLooper());
+
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run()
+            {
+                ArrayList<String> statusNames = new ArrayList<>(
+                        Arrays.asList(getResources().getStringArray(R.array.stoppage_status))
+                );
+                setJobStatusOptions(statusNames);
+
+                SharedPreferences preferences = getContext().getSharedPreferences(
+                        getString(R.string.preferences_file_key),
+                        Context.MODE_PRIVATE);
+
+                TextView tvUserIdLabel = (TextView)(getActivity().findViewById(R.id.tvUserIdLable));
+                String stoppageLabel = "Stoppage:";
+                tvUserIdLabel.setText(stoppageLabel);
+
+                TextView tbstoppageIdValue = (TextView) (getActivity()
+                        .findViewById(R.id.tbUserIdValue)); /* for speed, this is being left as
+                                                                "tbUserId", and just changed on
+                                                                the UI"
+                                                                */
+
+                tbstoppageIdValue.setText(newStoppageName);
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
     public void UpdateDisplayedbarcodeReading(final String barcodeValue)
     {
+        // note that "barcode" might refer to a QR code or other type
         if(!barcodeValue.equals(mCurrentBarcodeValue))
         {
             SharedPreferences preferences = getContext().getSharedPreferences(
@@ -457,6 +517,9 @@ public class dataDisplayFragment extends Fragment
             String userPrefix = preferences.getString(
                     "userPrefix","");
 
+            String stoppagePrefix = preferences.getString(
+                    "stoppagePrefix", "stpg_");
+
             String prefix = "";
             if(barcodeValue.length() >= 5) {
                 prefix = barcodeValue.substring(0, 5);
@@ -464,7 +527,26 @@ public class dataDisplayFragment extends Fragment
 
             if (prefix.equals(userPrefix))
             {
+                mIsInStoppageMode = false;
+                mStoppageId = null;
                 setDisplayedUserIdValue(barcodeValue);
+            }
+            else if (prefix.equals(stoppagePrefix))
+            {
+                String stoppageReason = mStoppageReasons.get(barcodeValue);
+                if(stoppageReason != null)
+                {
+                    mIsInStoppageMode = true;
+                    mStoppageId = barcodeValue;
+                    setDisplayedStoppageName(stoppageReason);
+                }
+                else
+                {
+                    Toast.makeText(getContext(),
+                            "Unknown stoppage ID",
+                            Toast.LENGTH_LONG)
+                            .show();
+                }
             }
             else
             {
@@ -477,7 +559,6 @@ public class dataDisplayFragment extends Fragment
             v.vibrate(500);
         }
     }
-
     private void transmitData(String serverUrl)
     {
         if (serverUrl != null) {
@@ -510,7 +591,13 @@ public class dataDisplayFragment extends Fragment
 
                                 resetDisplay();
 
-                                String responseState = responseValues.get("state");
+                                String responseState = null;
+                                if(responseValues.containsKey("state"))
+                                    responseState = responseValues.get("state");
+                                else if (responseValues.containsKey("result"))
+                                   responseState = responseValues.get("result");
+
+
                                 if (responseState.equals("clockedOn")) {
 
                                     screenMsg = "Clocked ON";
@@ -522,7 +609,7 @@ public class dataDisplayFragment extends Fragment
                                             Context.MODE_PRIVATE);
 
                                     boolean quantityComplete = preferences.getBoolean(
-                                            getString(R.string.preferences_quantity_complete),false);
+                                            getString(R.string.preferences_quantity_complete), false);
 
                                     if (quantityComplete)
                                         requestQuantityComplete(Integer.parseInt(responseValues.get("logRef")));
@@ -530,7 +617,16 @@ public class dataDisplayFragment extends Fragment
                                     screenMsg = "Clocked OFF";
 
                                     textColour = "949ace";
-                                } else {
+                                }
+                                else if (responseState.equals("stoppageOn")) {
+                                    textColour = "ffffff";
+                                    screenMsg = "Stoppage Start Recorded";
+                                }
+                                else if (responseState.equals("stoppageOff")) {
+                                    textColour = "ffffff";
+                                    screenMsg = "Stoppage Resolved";
+                                }
+                                else {
                                     screenMsg = responseState;
                                 }
 
@@ -602,18 +698,23 @@ public class dataDisplayFragment extends Fragment
         if (spStationIdValue.getSelectedItem() != null)
             stationIdValue = spStationIdValue.getSelectedItem().toString();
 
-        String userIdValue = tbUserIdValue.getText().toString();
+        String userIdValue = null;
 
-        // if user prefix absent add it, this allows only number section to be entered
-        if((userIdValue.length() < 5) || !(userIdValue.substring(0,5).equals(userPrefix)))
-            userIdValue = userPrefix + userIdValue;
+        if(mIsInStoppageMode == false)
+        {
+            userIdValue = tbUserIdValue.getText().toString();
+
+            // if user prefix absent add it, this allows only number section to be entered
+            if ((userIdValue.length() < 5) || !(userIdValue.substring(0, 5).equals(userPrefix)))
+                userIdValue = userPrefix + userIdValue;
+        }
 
         String jobIdValue = tbJobIdValue.getText().toString();
 
         String jobStatus = spJobStatus.getSelectedItem().toString();
         jobStatus = getSystemWorkStatus(jobStatus);
 
-        if (userIdValue.equals("") || jobIdValue.equals("") || stationIdValue.equals("")) {
+        if ((!mIsInStoppageMode && userIdValue.equals("")) || jobIdValue.equals("") || stationIdValue.equals("")) {
             params = null;
 
             String missingCode = "";
@@ -626,10 +727,10 @@ public class dataDisplayFragment extends Fragment
                         .show();
             }
             else{
-                if (userIdValue.equals("") && jobIdValue.equals(""))
+                if (mIsInStoppageMode && userIdValue.equals("") && jobIdValue.equals(""))
                     missingCode = "User & Job ID";
                 else {
-                    if (userIdValue.equals(""))
+                    if (userIdValue.equals("") && !mIsInStoppageMode)
                         missingCode = "User ID";
                     else
                         missingCode = "Job ID";
@@ -642,12 +743,22 @@ public class dataDisplayFragment extends Fragment
                     .show();
             }
         }else {
-
-            params.put("request", "clockUser");
-            params.put("jobId", jobIdValue);//mReworkData.jobValue); // TODO
-            params.put("userId", userIdValue);//mReworkData.userValue);
-            params.put("stationId", stationIdValue);
-            params.put("jobStatus", jobStatus); //TODO //stageComplete
+            if(mIsInStoppageMode)
+            {
+                params.put("request","recordStoppage");
+                params.put("stoppageId", mStoppageId);
+                params.put("jobId", jobIdValue);
+                params.put("stationId", stationIdValue);
+                params.put("jobStatus", jobStatus);
+            }
+            else
+            {
+                params.put("request", "clockUser");
+                params.put("jobId", jobIdValue);//mReworkData.jobValue); // TODO
+                params.put("userId", userIdValue);//mReworkData.userValue);
+                params.put("stationId", stationIdValue);
+                params.put("jobStatus", jobStatus); //TODO //stageComplete
+            }
 
             Log.d(TAG, "Parameters- " + params);
         }
@@ -677,21 +788,40 @@ public class dataDisplayFragment extends Fragment
 
         String[] status_list = getResources().getStringArray(R.array.list_work_status);
         String[] status_list_values = getResources().getStringArray(R.array.list_work_status_values);
+        String[] stoppageStatusList = getResources().getStringArray(R.array.stoppage_status);
+        String[] stoppageStatusListValues = getResources().getStringArray(
+                                                                R.array.stoppage_status_values
+                                                            );
 
         int index = -1;
-        for (int i=0;i<status_list.length;i++) {
-            if (status_list[i].equals(workStatus)) {
-                index = i;
-                break;
+        if(!mIsInStoppageMode) {
+            for (int i = 0; i < status_list.length; i++) {
+                if (status_list[i].equals(workStatus)) {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index < 0) {
+                systemWorkStatus = "unknown";
+            } else {
+                systemWorkStatus = status_list_values[index];
             }
         }
-
-        if (index < 0)
+        else
         {
-            systemWorkStatus = "unknown";
-        }
-        else {
-            systemWorkStatus = status_list_values[index];
+            for (int i = 0; i < stoppageStatusList.length; i++) {
+                if (stoppageStatusList[i].equals(workStatus)) {
+                    index = i;
+                    break;
+                }
+            }
+
+            if (index < 0) {
+                systemWorkStatus = "unknown";
+            } else {
+                systemWorkStatus = stoppageStatusListValues[index];
+            }
         }
 
         return systemWorkStatus;
@@ -708,12 +838,17 @@ public class dataDisplayFragment extends Fragment
             responseValues.put("status", status);
 
             if (status.equals("success")) {
-
-                JSONObject jsonResult = serverResponse.getJSONObject("result");
-
-                responseValues.put("state", jsonResult.getString("state"));
-
-                responseValues.put("logRef", jsonResult.getString("logRef"));
+                // result might be a json object or a string. Test for type using optJSONObject
+                JSONObject jsonResult = serverResponse.optJSONObject("result");
+                if(jsonResult != null) {
+                    responseValues.put("state", jsonResult.getString("state"));
+                    responseValues.put("logRef", jsonResult.getString("logRef"));
+                }
+                else
+                {
+                    String result = serverResponse.optString("result",null);
+                    responseValues.put("result", result);
+                }
             }
             else{
                 responseValues.put("result", serverResponse.getString("result"));
@@ -770,6 +905,19 @@ public class dataDisplayFragment extends Fragment
 
         Boolean rememberUserPref = preferences.getBoolean(
                 "rememberUser",false);
+
+        mIsInStoppageMode = false;
+        mStoppageId = null;
+
+        ArrayList<String> statusNames = new ArrayList<>(
+                Arrays.asList(getResources().getStringArray(R.array.list_work_status))
+        );
+        setJobStatusOptions(statusNames);
+
+
+        TextView tvUserIdLabel = (TextView)(getActivity().findViewById(R.id.tvUserIdLable));
+        String userIdLabel = getResources().getString(R.string.user_id_label);
+        tvUserIdLabel.setText(userIdLabel);
 
         if (!rememberUserPref){
             setDisplayedUserIdValue("");

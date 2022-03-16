@@ -4,6 +4,7 @@
     <string name="job_id_placeholder_text">Scan a Job Id</string>
     <string name="job_id_label">Job Id:</string>
     <string name="user_id_label">User Id:</string>
+    <string name="stoppage_id_label">Stoppage:</string>
     <string name="station_label">Station:</string>
     <string name="send">Send</string>
     <string name="title_activity_settings">Settings</string>
@@ -84,6 +85,16 @@
         <item>Complete</item>
     </string-array>
 
+    <string-array name="stoppage_status_values">
+        <item>unresolved</item>
+        <item>resolved</item>
+    </string-array>
+
+    <string-array name="stoppage_status">
+        <item>Unresolved</item>
+        <item>Resolved</item>
+    </string-array>
+
     <string-array name="multi_select_list_preference_default_value" />
 
     <string name="pref_title_system_sync_settings">System sync settings</string>
@@ -112,6 +123,7 @@
     <string name="preferences_stationIds" translatable="false">stationIds</string>
     <string name="preferences_staticStation" translatable="false">staticStation</string>
     <string name="preferences_user_prefix" translatable="false">userPrefix</string>
+    <string name="preferences_stoppages_prefix" translatable="false">stoppagesPrefix</string>
     <string name="preferences_product_prefix" translatable="false">productPrefix</string>
     <string name="preferences_quantity_complete" translatable="false">quantityComplete</string>
     <string name="title_activity_settings_password_screen">settingsPasswordScreen</string>
