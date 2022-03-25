@@ -9,6 +9,7 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Vibrator;
 
 
@@ -510,6 +511,7 @@ public class dataDisplayFragment extends Fragment
         // note that "barcode" might refer to a QR code or other type
         if(!barcodeValue.equals(mCurrentBarcodeValue))
         {
+            Looper myLooper = Looper.myLooper();
             SharedPreferences preferences = getContext().getSharedPreferences(
                     getString(R.string.preferences_file_key),
                     Context.MODE_PRIVATE);
@@ -542,10 +544,22 @@ public class dataDisplayFragment extends Fragment
                 }
                 else
                 {
-                    Toast.makeText(getContext(),
-                            "Unknown stoppage ID",
-                            Toast.LENGTH_LONG)
-                            .show();
+                    // Get a handler that can be used to post to the main thread
+                    Handler mainHandler = new Handler(getContext().getMainLooper());
+
+                    Runnable runnable = new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            Toast.makeText(
+                                    getContext(),
+                                    "Unknown stoppage ID",
+                                    Toast.LENGTH_LONG)
+                                    .show();
+                        }
+                    };
+
+                    mainHandler.post(runnable);
                 }
             }
             else
