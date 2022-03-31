@@ -667,7 +667,7 @@ public class cameraFragment extends Fragment
         Type.Builder typeUcharY = new Type.Builder(rs, Element.U8(rs));
         typeUcharY.setX(yRowStride).setY(height);
         Allocation yAlloc = Allocation.createTyped(rs, typeUcharY.create());
-        yAlloc.copyFrom(y);
+        yAlloc.copy1DRangeFrom(0, y.length, y);
         mYuv420.set_ypsIn(yAlloc);
 
         Type.Builder typeUcharUV = new Type.Builder(rs, Element.U8(rs));
