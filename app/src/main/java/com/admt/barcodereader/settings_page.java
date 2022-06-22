@@ -45,6 +45,7 @@ public class settings_page extends AppCompatActivity
         EditText tbUserIdPrefix = (EditText)findViewById(R.id.tbUserIdPrefix);
         EditText tbProductIdPrefix = (EditText)findViewById(R.id.tbProductIdPrefix);
         EditText tbAppIdentifierName = (EditText)findViewById(R.id.tbAppIdentifierName);
+        Spinner spDetectionDelay = (Spinner)findViewById(R.id.spDetectionDelay);
 
 
         SharedPreferences prefs = getSharedPreferences(
@@ -72,12 +73,25 @@ public class settings_page extends AppCompatActivity
                 getString(R.string.preferences_app_id_name), getString(R.string.default_app_id_name));
         Set<String> stationSet = prefs.getStringSet(
                 getString(R.string.preferences_stationIds), new HashSet<String>());
+        long detectionDelay = prefs.getLong("detectionDelay", 1000);
         tbServerURL.setText(serverAddress);
         tbSettingsPassword.setText(settingsPassword);
         if(useFrontCamera)
             spCameraSelect.setSelection(0);
         else
             spCameraSelect.setSelection(1);
+
+        // note times are in milliseconds
+        if(detectionDelay == 0)
+            spDetectionDelay.setSelection(0);
+        else if(detectionDelay == 500)
+            spDetectionDelay.setSelection(1);
+        else if(detectionDelay == 1000)
+            spDetectionDelay.setSelection(2);
+        else if(detectionDelay == 2000)
+            spDetectionDelay.setSelection(3);
+        else if(detectionDelay == 3000)
+            spDetectionDelay.setSelection(4);
 
         ArrayList<String> stationList = new ArrayList<>(stationSet);
         stationList.add(0, "");
@@ -116,6 +130,7 @@ public class settings_page extends AppCompatActivity
         EditText tbUserIdPrefix = (EditText)findViewById(R.id.tbUserIdPrefix);
         EditText tbProductIdPrefix = (EditText)findViewById(R.id.tbProductIdPrefix);
         EditText tbAppIdName = (EditText)findViewById(R.id.tbAppIdentifierName);
+        Spinner spDetectionDelay = (Spinner)findViewById(R.id.spDetectionDelay);
 
         int camOptionSelection = spCameraSelect.getSelectedItemPosition();
         boolean useFrontCamera = true;
@@ -158,6 +173,18 @@ public class settings_page extends AppCompatActivity
             editor.putString("userPrefix", userPrefix);
             editor.putString("productPrefix", productPrefix);
             editor.putString(getString(R.string.preferences_app_id_name), appIdName);
+
+            if(spDetectionDelay.getSelectedItemPosition() == 0)
+                editor.putLong("detectionDelay", 0);
+            else if(spDetectionDelay.getSelectedItemPosition() == 1)
+                editor.putLong("detectionDelay", 500);
+            else if(spDetectionDelay.getSelectedItemPosition() == 2)
+                editor.putLong("detectionDelay", 1000);
+            else if(spDetectionDelay.getSelectedItemPosition() == 3)
+                editor.putLong("detectionDelay", 2000);
+            else if(spDetectionDelay.getSelectedItemPosition() == 4)
+                editor.putLong("detectionDelay", 3000);
+
             editor.commit();
 
             Intent intent = new Intent(this, MainActivity.class);

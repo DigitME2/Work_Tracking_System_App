@@ -21,6 +21,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -31,6 +32,7 @@ import android.renderscript.RenderScript;
 import android.renderscript.Script;
 import android.renderscript.Type;
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.fragment.app.Fragment;
 import androidx.core.content.ContextCompat;
 import android.util.Log;
@@ -43,6 +45,7 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.google.android.gms.vision.CameraSource;
@@ -52,6 +55,13 @@ import com.google.android.gms.vision.barcode.BarcodeDetector;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.Semaphore;
 
 import static java.lang.Math.abs;
@@ -133,6 +143,41 @@ public class cameraFragment extends Fragment
     {
         private long mDelayMillis = 1000; // before another code can be scanned
         private long mDelayTimeoutEndMillis = 0;
+        private class BarcodeDetectionTimeouts
+        {
+            String barcodeNumber;
+            long minimumValidityTimeout;
+            long maximumLifespanTimestamp;
+        }
+        private Map<String, BarcodeDetectionTimeouts> barcodeDetectionTimeoutsMap;
+        private Timer timer;
+        private TimerTask timerTask;
+
+        BarcodeProcessor()
+        {
+            barcodeDetectionTimeoutsMap = new HashMap<>();
+            timer = new Timer(true);
+            timerTask = new TimerTask() {
+                @Override
+                public void run() {
+                    // run through the list of detections and remove any stale entries
+                    long currentTime = SystemClock.elapsedRealtime();
+                    Set<String> keys = barcodeDetectionTimeoutsMap.keySet();
+                    Iterator iterator = keys.iterator();
+                    while(iterator.hasNext())
+                    {
+                        String key = (String)iterator.next();
+                        BarcodeDetectionTimeouts record = barcodeDetectionTimeoutsMap.get(key);
+                        if(currentTime > record.maximumLifespanTimestamp) {
+                            barcodeDetectionTimeoutsMap.remove(key);
+                            Log.d(TAG, String.format("Remove detection record of %s due to expiry", key));
+                        }
+                    }
+                }
+            };
+
+            timer.scheduleAtFixedRate(timerTask, 1000, 1000);
+        }
 
         public void receiveDetections(SparseArray<Barcode> detections)
         {
@@ -141,23 +186,48 @@ public class cameraFragment extends Fragment
             // otherwise tend to makes the phone buzz like a hive of angry bees.
             if (detections.size() > 0)
             {
+                SharedPreferences prefs = getContext().getSharedPreferences(
+                        getString(R.string.preferences_file_key),
+                        Context.MODE_PRIVATE
+                );
+                long detectionDelay = prefs.getLong("detectionDelay",1000);
                 long currentTimeMillis = SystemClock.elapsedRealtime();
-                if(currentTimeMillis > mDelayTimeoutEndMillis)
-                {
-                    int key = detections.keyAt(0);
-                    String barcodeNumber = detections.get(key).rawValue;
-                    Log.d(TAG, String.format("Detected barcode %s", barcodeNumber));
 
-                    mBarcodeReadCallback.onBarcodeRead(barcodeNumber);
+                int key = detections.keyAt(0);
+                String barcodeNumber = detections.get(key).rawValue;
+                Log.d(TAG, String.format("Handling barcode detection for string  %s", barcodeNumber));
 
-                    mDelayTimeoutEndMillis = currentTimeMillis + mDelayMillis;
+                // only delay passing detected barcodes to the rest of the app if the delay is not 0
+                if(detectionDelay != 0) {
+                    if (!barcodeDetectionTimeoutsMap.containsKey(barcodeNumber))
+                    {
+                        // if the current barcode hasn't been recorded, add it now
+                        BarcodeDetectionTimeouts b = new BarcodeDetectionTimeouts();
+                        b.minimumValidityTimeout = currentTimeMillis + detectionDelay;
+                        b.maximumLifespanTimestamp = currentTimeMillis + (2 * detectionDelay);
+                        barcodeDetectionTimeoutsMap.put(barcodeNumber, b);
+                    }
+                    else
+                    {
+                        // otherwise, if the timeout has passed, send it up to the container app.
+                        BarcodeDetectionTimeouts b = barcodeDetectionTimeoutsMap.get(barcodeNumber);
+                        if(currentTimeMillis > b.minimumValidityTimeout) {
+                            mBarcodeReadCallback.onBarcodeRead(barcodeNumber);
+                            barcodeDetectionTimeoutsMap.remove(barcodeNumber);
+                        }
+                    }
                 }
+                else
+                {
+                    mBarcodeReadCallback.onBarcodeRead(barcodeNumber);
+                }
+
             }
         }
 
         public void cancelDelay()
         {
-            mDelayTimeoutEndMillis = SystemClock.elapsedRealtime();
+            
         }
 
         public void release()

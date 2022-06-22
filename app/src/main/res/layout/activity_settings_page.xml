@@ -166,6 +166,17 @@
                 android:importantForAutofill="no"
                 android:inputType="textShortMessage" />
 
+            <TextView
+                android:id="@+id/tvDetectionDelay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/detection_delay_label" />
+
+            <Spinner
+                android:id="@+id/spDetectionDelay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:entries="@array/detection_delay_labels"/>
         </LinearLayout>
     </ScrollView>
 

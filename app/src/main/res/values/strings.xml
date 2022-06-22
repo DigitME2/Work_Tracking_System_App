@@ -14,6 +14,7 @@
     <string name="default_user_prefix">user_</string>
     <string name="default_product_prefix">prdt_</string>
     <string name="default_stoppage_prefix">stpg_</string>
+    <string name="detection_delay_label">Detection Delay (seconds)</string>
 
 
     <!-- Example General settings -->
@@ -37,6 +38,14 @@
         <item>1</item>
         <item>0</item>
         <item>-1</item>
+    </string-array>
+
+    <string-array name="detection_delay_labels">
+        <item>No delay</item>
+        <item>0.5 seconds</item>
+        <item>1 second</item>
+        <item>2 seconds</item>
+        <item>3 seconds</item>
     </string-array>
 
     <!-- Example settings for Data & Sync -->
