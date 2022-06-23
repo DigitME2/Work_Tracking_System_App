@@ -65,7 +65,7 @@ public class dataDisplayFragment extends Fragment
     private String mCurrentBarcodeValue = "";
     private TimerTask mServerCheckTimerTask = null;
     private Timer mServerCheckTimer = null;
-    private onDataDisplayInteraction mDataDisplayInteracionCallback = null;
+    private onDataDisplayInteraction mDataDisplayInteractionCallback = null;
     private int mHeartbeatCounter = 0;
     private boolean mIsInStoppageMode = false;
     private HashMap<String, String> mStoppageReasons;
@@ -111,6 +111,10 @@ public class dataDisplayFragment extends Fragment
     {
         void onBarcodeReadHandled();
         void onBarcodeSeen();
+        void onClockedOn(String JobId);
+        void onClockedOff(String JobId);
+        void onStoppageStart(String JobId, String StoppageReason);
+        void onStoppageEnd(String JobId, String StoppageReason);
     }
 
     @Override
@@ -121,7 +125,7 @@ public class dataDisplayFragment extends Fragment
         mReworkData = new jobReworkData();
         mRequestQueue = Volley.newRequestQueue(getContext());
         MainActivity mainActivity = (MainActivity)getActivity();
-        mDataDisplayInteracionCallback  = (onDataDisplayInteraction) mainActivity;
+        mDataDisplayInteractionCallback = (onDataDisplayInteraction) mainActivity;
         mStoppageReasons = new HashMap<String, String>();
     }
 
@@ -568,7 +572,7 @@ public class dataDisplayFragment extends Fragment
             }
 
             mCurrentBarcodeValue = barcodeValue;
-            mDataDisplayInteracionCallback.onBarcodeSeen();
+            mDataDisplayInteractionCallback.onBarcodeSeen();
             Vibrator v = (Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE);
             v.vibrate(500);
         }
@@ -598,8 +602,14 @@ public class dataDisplayFragment extends Fragment
 
                             Map<String, String> responseValues = getResponseValues(response);
 
-                            String screenMsg;
+                            String screenMsg = "";
                             String textColour = "000000";
+
+                            SharedPreferences preferences = getContext().getSharedPreferences(
+                                    getString(R.string.preferences_file_key),
+                                    Context.MODE_PRIVATE);
+                            Boolean useFullscreenConfirmations =
+                                    preferences.getBoolean("useFullscreenConfirmations", true);
 
                             if (responseValues.get("status").equals("success")) {
 
@@ -611,65 +621,77 @@ public class dataDisplayFragment extends Fragment
                                 else if (responseValues.containsKey("result"))
                                    responseState = responseValues.get("result");
 
-
                                 if (responseState.equals("clockedOn")) {
-
-                                    screenMsg = "Clocked ON";
-
-                                    textColour = "96ce94";
+                                    if(useFullscreenConfirmations)
+                                        mDataDisplayInteractionCallback.onClockedOn(params.get("jobId"));
+                                    else {
+                                        screenMsg = "Clocked ON";
+                                        textColour = "96ce94";
+                                    }
                                 } else if (responseState.equals("clockedOff")) {
-                                    SharedPreferences preferences = getContext().getSharedPreferences(
-                                            getString(R.string.preferences_file_key),
-                                            Context.MODE_PRIVATE);
-
                                     boolean quantityComplete = preferences.getBoolean(
                                             getString(R.string.preferences_quantity_complete), false);
 
+                                    if(useFullscreenConfirmations)
+                                        mDataDisplayInteractionCallback.onClockedOff(params.get("jobId"));
+                                    else {
+                                        screenMsg = "Clocked OFF";
+                                        textColour = "949ace";
+                                    }
+
                                     if (quantityComplete)
                                         requestQuantityComplete(Integer.parseInt(responseValues.get("logRef")));
-
-                                    screenMsg = "Clocked OFF";
-
-                                    textColour = "949ace";
                                 }
                                 else if (responseState.equals("stoppageOn")) {
-                                    textColour = "ffffff";
-                                    screenMsg = "Stoppage Start Recorded";
+                                    if(useFullscreenConfirmations)
+                                        mDataDisplayInteractionCallback.onStoppageStart(
+                                                params.get("jobId"),
+                                                mStoppageReasons.get(params.get("stoppageId"))
+                                        );
+                                    else{
+                                        textColour = "ffffff";
+                                        screenMsg = "Stoppage Start Recorded";
+                                    }
                                 }
                                 else if (responseState.equals("stoppageOff")) {
-                                    textColour = "ffffff";
-                                    screenMsg = "Stoppage Resolved";
+                                    if(useFullscreenConfirmations)
+                                        mDataDisplayInteractionCallback.onStoppageEnd(
+                                                params.get("jobId"),
+                                                mStoppageReasons.get(params.get("stoppageId"))
+                                        );
+                                    else {
+                                        textColour = "ffffff";
+                                        screenMsg = "Stoppage Resolved";
+                                    }
                                 }
                                 else {
                                     screenMsg = responseState;
                                 }
-
                             } else {
-
                                 screenMsg = "Error- " + responseValues.get("result");
-
                                 textColour = "ffffff";
                             }
 
-                            Toast.makeText(getContext(),
-                                    Html.fromHtml("<font color='#" + textColour + "' >" + screenMsg + "</font>"),
-                                    Toast.LENGTH_LONG)
-                                    .show();
-
+                            if(screenMsg != "") {
+                                Toast.makeText(getContext(),
+                                        Html.fromHtml("<font font-size='200%' color='#" + textColour + "' >" + screenMsg + "</font>"),
+                                        Toast.LENGTH_LONG)
+                                        .show();
+                            }
 
                             //TODO: fill in response functionality
 
 
                             Log.d(TAG, "Attempted to send data" + response.toString());
 
-                            mDataDisplayInteracionCallback.onBarcodeReadHandled();
+                            mDataDisplayInteractionCallback.onBarcodeReadHandled();
                         }
                     },
                     new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
                             handleRequestError(error);
-                            mDataDisplayInteracionCallback.onBarcodeReadHandled();
+                            mDataDisplayInteractionCallback.onBarcodeReadHandled();
                         }
                     }) {
                 @Override
@@ -908,7 +930,7 @@ public class dataDisplayFragment extends Fragment
     private void onBtnCancelPressed()
     {
         resetDisplay();
-        mDataDisplayInteracionCallback.onBarcodeReadHandled();
+        mDataDisplayInteractionCallback.onBarcodeReadHandled();
     }
 
     void resetDisplay()
@@ -1075,7 +1097,7 @@ public class dataDisplayFragment extends Fragment
 
                             Log.d(TAG, "Attempted to retrieve stations" + response.toString());
 
-                            mDataDisplayInteracionCallback.onBarcodeReadHandled();
+                            mDataDisplayInteractionCallback.onBarcodeReadHandled();
                         }
                     },
                     new Response.ErrorListener() {
@@ -1190,7 +1212,7 @@ public class dataDisplayFragment extends Fragment
 
                             Log.d(TAG, "Attempted to retrieve stoppages" + response.toString());
 
-                            mDataDisplayInteracionCallback.onBarcodeReadHandled();
+                            mDataDisplayInteractionCallback.onBarcodeReadHandled();
                         }
                     },
                     new Response.ErrorListener() {

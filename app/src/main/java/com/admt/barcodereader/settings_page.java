@@ -46,6 +46,7 @@ public class settings_page extends AppCompatActivity
         EditText tbProductIdPrefix = (EditText)findViewById(R.id.tbProductIdPrefix);
         EditText tbAppIdentifierName = (EditText)findViewById(R.id.tbAppIdentifierName);
         Spinner spDetectionDelay = (Spinner)findViewById(R.id.spDetectionDelay);
+        Switch swUseFullscreenConfirmations = (Switch)findViewById(R.id.swUseFullscreenConfirmations);
 
 
         SharedPreferences prefs = getSharedPreferences(
@@ -74,6 +75,7 @@ public class settings_page extends AppCompatActivity
         Set<String> stationSet = prefs.getStringSet(
                 getString(R.string.preferences_stationIds), new HashSet<String>());
         long detectionDelay = prefs.getLong("detectionDelay", 1000);
+        boolean useFullscreenConfirmations = prefs.getBoolean("useFullscreenConfirmations",true);
         tbServerURL.setText(serverAddress);
         tbSettingsPassword.setText(settingsPassword);
         if(useFrontCamera)
@@ -113,6 +115,7 @@ public class settings_page extends AppCompatActivity
         tbUserIdPrefix.setText(userPrefix);
         tbProductIdPrefix.setText(productPrefix);
         tbAppIdentifierName.setText(appIdentifierName);
+        swUseFullscreenConfirmations.setChecked(useFullscreenConfirmations);
     }
 
     public void onBtnOkClicked(View v)
@@ -131,6 +134,7 @@ public class settings_page extends AppCompatActivity
         EditText tbProductIdPrefix = (EditText)findViewById(R.id.tbProductIdPrefix);
         EditText tbAppIdName = (EditText)findViewById(R.id.tbAppIdentifierName);
         Spinner spDetectionDelay = (Spinner)findViewById(R.id.spDetectionDelay);
+        Switch swUseFullscreenConfirmations = (Switch)findViewById(R.id.swUseFullscreenConfirmations);
 
         int camOptionSelection = spCameraSelect.getSelectedItemPosition();
         boolean useFrontCamera = true;
@@ -184,6 +188,8 @@ public class settings_page extends AppCompatActivity
                 editor.putLong("detectionDelay", 2000);
             else if(spDetectionDelay.getSelectedItemPosition() == 4)
                 editor.putLong("detectionDelay", 3000);
+
+            editor.putBoolean("useFullscreenConfirmations",swUseFullscreenConfirmations.isChecked());
 
             editor.commit();
 

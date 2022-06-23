@@ -11,4 +11,13 @@
     <color name="colorSubmitBackgroundfocused">#a30a2a</color>
     <color name="colorSubmit">#fff</color>
     <color name="torchOn">#f5f253</color>
+
+    <color name="clockOnConfirmationBackgroundColour">#34eb3a</color>
+    <color name="clockOnConfirmationTextColour">#000000</color>
+    <color name="clockOffConfirmationBackgroundColour">#5e64d1</color>
+    <color name="clockOffConfirmationTextColour">#000000</color>
+    <color name="stoppageOnConfirmationBackgroundColour">#de7428</color>
+    <color name="stoppageOnConfirmationTextColour">#000000</color>
+    <color name="stoppageOffConfirmationBackgroundColour">#07b034</color>
+    <color name="stoppageOffConfirmationTextColour">#000000</color>
 </resources>

@@ -15,6 +15,7 @@
     <string name="default_product_prefix">prdt_</string>
     <string name="default_stoppage_prefix">stpg_</string>
     <string name="detection_delay_label">Detection Delay (seconds)</string>
+    <string name="use_fullscreen_confirmations">Use Fullscreen Confirmations</string>
 
 
     <!-- Example General settings -->

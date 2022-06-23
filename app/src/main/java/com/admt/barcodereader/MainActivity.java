@@ -100,6 +100,37 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    public void onClockedOn(String JobId)
+    {
+        Intent intent = new Intent(this, clockedOnConfirmation.class);
+        intent.putExtra("jobId",JobId);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onClockedOff(String JobId) {
+        Intent intent = new Intent(this, clockedOffConfirmation.class);
+        intent.putExtra("jobId",JobId);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onStoppageStart(String JobId, String StoppageReason) {
+        Intent intent = new Intent(this, stoppageStartConfirmation.class);
+        intent.putExtra("jobId",JobId);
+        intent.putExtra("stoppageReason", StoppageReason);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onStoppageEnd(String JobId, String StoppageReason) {
+        Intent intent = new Intent(this, stoppageEndedConfirmation.class);
+        intent.putExtra("jobId",JobId);
+        intent.putExtra("stoppageReason", StoppageReason);
+        startActivity(intent);
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
         getMenuInflater().inflate(R.menu.menu,menu);

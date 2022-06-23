@@ -25,7 +25,7 @@ public class settingsPasswordScreen extends AppCompatActivity
         setContentView(R.layout.activity_settings_password_screen);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
+        
         EditText tbPassword = (EditText)findViewById(R.id.etPassword);
 
         tbPassword.setOnEditorActionListener(new TextView.OnEditorActionListener() {
