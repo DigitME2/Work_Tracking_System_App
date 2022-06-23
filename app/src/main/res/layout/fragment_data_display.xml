@@ -20,7 +20,7 @@
             android:layout_marginStart="16dp"
             android:labelFor="@id/spStationIdValue"
             android:text="@string/station_label"
-            android:textSize="24sp"
+            android:textSize="20sp"
             app:layout_constraintBottom_toTopOf="@+id/tvUserIdLable"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
@@ -43,7 +43,7 @@
             android:layout_marginStart="16dp"
             android:labelFor="@id/tbUserIdValue"
             android:text="@string/user_id_label"
-            android:textSize="24sp"
+            android:textSize="20sp"
             app:layout_constraintBottom_toTopOf="@+id/tvJobIdLable"
             app:layout_constraintEnd_toEndOf="@+id/tvStationIdLable"
             app:layout_constraintStart_toStartOf="parent"
@@ -60,7 +60,7 @@
             android:inputType="number"
             android:nextFocusDown="@id/tbJobIdValue"
             android:nextFocusForward="@id/tbJobIdValue"
-            android:textSize="24sp"
+            android:textSize="20sp"
             app:layout_constraintBaseline_toBaselineOf="@id/tvUserIdLable"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/tvUserIdLable" />
@@ -72,7 +72,7 @@
             android:layout_marginStart="16dp"
             android:labelFor="@id/tbJobIdValue"
             android:text="@string/job_id_label"
-            android:textSize="24sp"
+            android:textSize="20sp"
             app:layout_constraintBottom_toTopOf="@+id/tvStatusLable"
             app:layout_constraintEnd_toEndOf="@+id/tvUserIdLable"
             app:layout_constraintHorizontal_bias="1.0"
@@ -88,7 +88,7 @@
             android:ems="10"
             android:hint="@string/job_id_placeholder_text"
             android:inputType="text"
-            android:textSize="24sp"
+            android:textSize="20sp"
             app:layout_constraintBaseline_toBaselineOf="@id/tvJobIdLable"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/tvJobIdLable" />
@@ -100,8 +100,8 @@
             android:layout_marginStart="16dp"
             android:labelFor="@id/spStationIdValue"
             android:text="@string/job_status_label"
-            android:textSize="24sp"
-            app:layout_constraintBottom_toTopOf="@+id/buttonsLowerSet"
+            android:textSize="20sp"
+            app:layout_constraintBottom_toTopOf="@+id/tvStoppageDescriptionLabel"
             app:layout_constraintEnd_toEndOf="@+id/tvJobIdLable"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvJobIdLable" />
@@ -117,6 +117,38 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/tvStatusLable"
             app:layout_constraintTop_toTopOf="@+id/tvStatusLable" />
+
+        <TextView
+            android:id="@+id/tvStoppageDescriptionLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:labelFor="@id/etStoppageDescription"
+            android:text="@string/stoppage_description_box_title"
+            android:textSize="20sp"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toTopOf="@+id/buttonsLowerSet"
+            app:layout_constraintEnd_toEndOf="@+id/tvStatusLable"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvStatusLable" />
+
+        <EditText
+            android:id="@+id/etStoppageDescription"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:ems="10"
+            android:hint="@string/stoppage_description_box_placeholder"
+            android:inputType="text"
+            android:textSize="20sp"
+            android:visibility="invisible"
+            app:layout_constraintBaseline_toBaselineOf="@id/tvStoppageDescriptionLabel"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/tvJobIdLable" />
+
+
 
         <LinearLayout
             android:id="@+id/buttonsLowerSet"

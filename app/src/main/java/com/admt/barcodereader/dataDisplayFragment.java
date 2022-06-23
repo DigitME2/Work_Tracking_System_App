@@ -1,5 +1,7 @@
 package com.admt.barcodereader;
 
+import static android.view.View.INVISIBLE;
+
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
@@ -161,6 +163,15 @@ public class dataDisplayFragment extends Fragment
         });
 
         view.setBackgroundColor(Color.WHITE);
+
+        TextView tvStoppageLabel = (TextView)view.findViewById(R.id.tvStoppageDescriptionLabel);
+        EditText etStoppageDesc = (EditText)view.findViewById(R.id.etStoppageDescription);
+
+        //tvStoppageLabel.setEnabled(false);
+        tvStoppageLabel.setVisibility(View.INVISIBLE);
+        //etStoppageDesc.setEnabled(false);
+        etStoppageDesc.setVisibility(View.INVISIBLE);
+
 
         boolean staticStation = prefs.getBoolean(
                 getString(R.string.preferences_staticStation),false);
@@ -450,6 +461,13 @@ public class dataDisplayFragment extends Fragment
                 tvUserIdLabel.setText(userIdLabel);
 
                 tbUserIdValue.setText(newUserIdValue);
+
+                TextView tvStoppageLabel = (TextView)getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
+                EditText etStoppageDesc = (EditText)getActivity().findViewById(R.id.etStoppageDescription);
+
+                tvStoppageLabel.setVisibility(View.INVISIBLE);
+                etStoppageDesc.setVisibility(View.INVISIBLE);
+                etStoppageDesc.setText("");
             }
         };
         mainHandler.post(myRunnable);
@@ -505,6 +523,14 @@ public class dataDisplayFragment extends Fragment
                                                                 */
 
                 tbstoppageIdValue.setText(newStoppageName);
+
+                if(preferences.getBoolean("allowStoppageDescription", true)){
+                    TextView tvStoppageLabel = (TextView)getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
+                    EditText etStoppageDesc = (EditText)getActivity().findViewById(R.id.etStoppageDescription);
+
+                    tvStoppageLabel.setVisibility(View.VISIBLE);
+                    etStoppageDesc.setVisibility(View.VISIBLE);
+                }
             }
         };
         mainHandler.post(myRunnable);
@@ -786,6 +812,12 @@ public class dataDisplayFragment extends Fragment
                 params.put("jobId", jobIdValue);
                 params.put("stationId", stationIdValue);
                 params.put("jobStatus", jobStatus);
+
+                // the user may optionally provide a brief description, depending on app settings
+                if(preferences.getBoolean("allowStoppageDescription", false)){
+                    EditText etStoppageDesc = (EditText)getActivity().findViewById(R.id.etStoppageDescription);
+                    params.put("description", etStoppageDesc.getText().toString());
+                }
             }
             else
             {
@@ -963,6 +995,13 @@ public class dataDisplayFragment extends Fragment
 
         Spinner spJobStatus = (Spinner) (getActivity().findViewById(R.id.spJobStatus));
         spJobStatus.setSelection(0);
+
+        TextView tvStoppageLabel = (TextView)getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
+        EditText etStoppageDesc = (EditText)getActivity().findViewById(R.id.etStoppageDescription);
+
+        tvStoppageLabel.setVisibility(INVISIBLE);
+        etStoppageDesc.setVisibility(INVISIBLE);
+        etStoppageDesc.setText("");
 
         mReworkData.jobValue = null;
         mReworkData.userValue = null;

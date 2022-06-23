@@ -18,7 +18,20 @@
         android:screenOrientation="portrait"
         android:supportsRtl="false"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        <activity android:name=".MainActivity"
+        <activity
+            android:name=".stoppageEndedConfirmation"
+            android:exported="false" />
+        <activity
+            android:name=".stoppageStartConfirmation"
+            android:exported="false" />
+        <activity
+            android:name=".clockedOffConfirmation"
+            android:exported="false" />
+        <activity
+            android:name=".clockedOnConfirmation"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -28,12 +41,12 @@
         </activity>
         <activity
             android:name=".settings_page"
-            android:parentActivityName=".MainActivity"></activity>
+            android:parentActivityName=".MainActivity" />
         <activity
             android:name=".settingsPasswordScreen"
             android:label="@string/title_activity_settings_password_screen"
-            android:windowSoftInputMode="stateVisible"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar"></activity>
+            android:theme="@style/Theme.AppCompat.Light.NoActionBar"
+            android:windowSoftInputMode="stateVisible" />
     </application>
 
 </manifest>

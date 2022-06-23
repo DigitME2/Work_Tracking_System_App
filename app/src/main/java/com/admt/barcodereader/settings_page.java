@@ -47,7 +47,7 @@ public class settings_page extends AppCompatActivity
         EditText tbAppIdentifierName = (EditText)findViewById(R.id.tbAppIdentifierName);
         Spinner spDetectionDelay = (Spinner)findViewById(R.id.spDetectionDelay);
         Switch swUseFullscreenConfirmations = (Switch)findViewById(R.id.swUseFullscreenConfirmations);
-
+        Switch swAllowStoppageDescriptions = (Switch)findViewById(R.id.swAllowStoppageDescriptions);
 
         SharedPreferences prefs = getSharedPreferences(
                 getString(R.string.preferences_file_key), Context.MODE_PRIVATE);
@@ -76,6 +76,7 @@ public class settings_page extends AppCompatActivity
                 getString(R.string.preferences_stationIds), new HashSet<String>());
         long detectionDelay = prefs.getLong("detectionDelay", 1000);
         boolean useFullscreenConfirmations = prefs.getBoolean("useFullscreenConfirmations",true);
+        boolean allowStoppageDescriptions = prefs.getBoolean("allowStoppageDescription",true);
         tbServerURL.setText(serverAddress);
         tbSettingsPassword.setText(settingsPassword);
         if(useFrontCamera)
@@ -116,6 +117,7 @@ public class settings_page extends AppCompatActivity
         tbProductIdPrefix.setText(productPrefix);
         tbAppIdentifierName.setText(appIdentifierName);
         swUseFullscreenConfirmations.setChecked(useFullscreenConfirmations);
+        swAllowStoppageDescriptions.setChecked(allowStoppageDescriptions);
     }
 
     public void onBtnOkClicked(View v)
@@ -135,6 +137,7 @@ public class settings_page extends AppCompatActivity
         EditText tbAppIdName = (EditText)findViewById(R.id.tbAppIdentifierName);
         Spinner spDetectionDelay = (Spinner)findViewById(R.id.spDetectionDelay);
         Switch swUseFullscreenConfirmations = (Switch)findViewById(R.id.swUseFullscreenConfirmations);
+        Switch swAllowStoppageDescriptions = (Switch)findViewById(R.id.swAllowStoppageDescriptions);
 
         int camOptionSelection = spCameraSelect.getSelectedItemPosition();
         boolean useFrontCamera = true;
@@ -190,6 +193,7 @@ public class settings_page extends AppCompatActivity
                 editor.putLong("detectionDelay", 3000);
 
             editor.putBoolean("useFullscreenConfirmations",swUseFullscreenConfirmations.isChecked());
+            editor.putBoolean("allowStoppageDescription", swAllowStoppageDescriptions.isChecked());
 
             editor.commit();
 
