@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WTS Scanner</string>
+    <string name="app_name">Process Time Tracker</string>
     <string name="user_id_placeholder_text">Scan a User Id</string>
     <string name="job_id_placeholder_text">Scan a Job Id</string>
     <string name="job_id_label">Job Id:</string>
@@ -171,11 +171,11 @@
     <string name="job_status_label">Status:</string>
     <string name="app_id_name_label">App ID name (used if station name not set)</string>
     <string name="app_id_name_hint">App identifying name</string>
-    <string name="default_app_id_name">WorkTrackingApp</string>
+    <string name="default_app_id_name">ProcessTimeTrackerApp_V1.1</string>
 
     <string name="quantity_complete_alert_message">Enter Quantity Complete-</string>
 
-    <string name="app_version">App_V1.0</string>
+    <string name="app_version">App_V1.1</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
