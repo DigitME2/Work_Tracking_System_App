@@ -64,6 +64,25 @@
                 android:importantForAutofill="no"
                 android:inputType="textUri" />
 
+            <Switch
+                android:id="@+id/swUseServerDiscovery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Automatic Server Discovery" />
+
+            <Button
+                android:id="@+id/btnFindServerNow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="0dp"
+                android:text="Find Server Now" />
+
+            <Switch
+                android:id="@+id/swEnableUserStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enable User Status Box" />
+
             <TextView
                 android:id="@+id/tvCameraSelect"
                 android:layout_width="match_parent"
@@ -121,35 +140,6 @@
                 android:layout_height="wrap_content"
                 android:text="@string/quantity_complete_pref_label" />
 
-            <TextView
-                android:id="@+id/tvProductPrefixLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:labelFor="@id/tbSettingsPassword"
-                android:text="@string/product_prefix_label" />
-
-            <EditText
-                android:id="@+id/tbProductIdPrefix"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/hint"
-                android:importantForAutofill="no"
-                android:inputType="textShortMessage" />
-
-            <TextView
-                android:id="@+id/tvUserPrefixLabel"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:labelFor="@id/tbSettingsPassword"
-                android:text="@string/user_prefix_label" />
-
-            <EditText
-                android:id="@+id/tbUserIdPrefix"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/user_prefix_hint"
-                android:importantForAutofill="no"
-                android:inputType="textShortMessage" />
 
             <TextView
                 android:id="@+id/tvAppIdentifierLabel"
@@ -189,8 +179,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/allow_stoppage_description" />
+
+            <Switch
+                android:id="@+id/swEnableVibration"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enable Vibration" />
+
         </LinearLayout>
     </ScrollView>
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

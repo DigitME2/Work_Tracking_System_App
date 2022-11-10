@@ -20,4 +20,6 @@
     <color name="stoppageOnConfirmationTextColour">#000000</color>
     <color name="stoppageOffConfirmationBackgroundColour">#07b034</color>
     <color name="stoppageOffConfirmationTextColour">#000000</color>
+    <color name="blankUSerStatusBackgroundColour">#808080</color>
+    <color name="blankUserStatusTextColour">#FFFFFF</color>
 </resources>

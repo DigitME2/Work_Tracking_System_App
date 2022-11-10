@@ -1,5 +1,4 @@
 package com.admt.barcodereader;
-
 import static android.view.View.INVISIBLE;
 
 import android.content.Context;
@@ -19,8 +18,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 
+import android.telephony.PhoneNumberFormattingTextWatcher;
+import android.text.Editable;
 import android.text.Html;
 import android.text.InputType;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -32,6 +34,7 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
@@ -62,8 +65,7 @@ import java.util.TimerTask;
  * read by the camera, and allows the user to set the rework level
  * and send the data to the server.
  */
-public class dataDisplayFragment extends Fragment
-{
+public class dataDisplayFragment extends Fragment {
     private String mCurrentBarcodeValue = "";
     private TimerTask mServerCheckTimerTask = null;
     private Timer mServerCheckTimer = null;
@@ -73,14 +75,15 @@ public class dataDisplayFragment extends Fragment
     private HashMap<String, String> mStoppageReasons;
     private String mStoppageId = null;
 
+    private Timer mGetUserStatusTimer = null;
+    private TimerTask mGetUserStatusTimerTask = null;
+
     // Not used in all places anymore, values got directly from text boxes, Maybe change??
-    private class jobReworkData
-    {
+    private class jobReworkData {
         public String jobValue;
         public String userValue;
 
-        public jobReworkData()
-        {
+        public jobReworkData() {
             jobValue = null;
             userValue = null;
         }
@@ -91,8 +94,7 @@ public class dataDisplayFragment extends Fragment
 
     String TAG = "ADMTBarcodeReaderDataDisplay";
 
-    public dataDisplayFragment()
-    {
+    public dataDisplayFragment() {
         // Required empty public constructor
     }
 
@@ -103,78 +105,128 @@ public class dataDisplayFragment extends Fragment
      * @return A new instance of fragment dataDisplayFragment.
      */
     // TODO: Rename and change types and number of parameters
-    public static dataDisplayFragment newInstance(String param1, String param2)
-    {
+    public static dataDisplayFragment newInstance(String param1, String param2) {
         dataDisplayFragment fragment = new dataDisplayFragment();
         return fragment;
     }
 
-    public interface onDataDisplayInteraction
-    {
+    public interface onDataDisplayInteraction {
         void onBarcodeReadHandled();
+
         void onBarcodeSeen();
+
         void onClockedOn(String JobId);
+
         void onClockedOff(String JobId);
+
         void onStoppageStart(String JobId, String StoppageReason);
+
         void onStoppageEnd(String JobId, String StoppageReason);
     }
 
+
     @Override
-    public void onCreate(Bundle savedInstanceState)
-    {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         mReworkData = new jobReworkData();
         mRequestQueue = Volley.newRequestQueue(getContext());
-        MainActivity mainActivity = (MainActivity)getActivity();
+        MainActivity mainActivity = (MainActivity) getActivity();
         mDataDisplayInteractionCallback = (onDataDisplayInteraction) mainActivity;
         mStoppageReasons = new HashMap<String, String>();
+        mGetUserStatusTimerTask = new TimerTask() {
+            @Override
+            public void run() {
+                if (mIsInStoppageMode) {
+                    return;
+                }
+                try {
+                    EditText etUserID = (EditText) getActivity().findViewById(R.id.tbUserIdValue);
+                    String UserID = etUserID.getText().toString();
+                    updateUserStatusIndicator(UserID);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        mGetUserStatusTimer = new Timer();
+        mGetUserStatusTimer.schedule(mGetUserStatusTimerTask, 1000, 5000);
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState)
-    {
+                             Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_data_display, container, false);
 
-        SharedPreferences prefs =getContext().getSharedPreferences(
+        SharedPreferences prefs = getContext().getSharedPreferences(
                 getString(R.string.preferences_file_key), Context.MODE_PRIVATE);
 
-        Button btnSend = (Button)view.findViewById(R.id.btnSend);
-        btnSend.setOnClickListener(new View.OnClickListener()
-        {
+        Button btnSend = (Button) view.findViewById(R.id.btnSend);
+        btnSend.setOnClickListener(new View.OnClickListener() {
             // btnSend handler
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 onBtnSendPressed();
             }
         });
 
-        Button btnCancel = (Button)view.findViewById(R.id.btnCancel);
-        btnCancel.setOnClickListener(new View.OnClickListener()
-        {
+        Button btnCancel = (Button) view.findViewById(R.id.btnCancel);
+        btnCancel.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v)
-            {
+            public void onClick(View v) {
                 onBtnCancelPressed();
             }
         });
 
+
+        EditText ettbUserIdValue = (EditText) view.findViewById(R.id.tbUserIdValue);
+        ettbUserIdValue.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+                String UserId = editable.toString();
+                if(!mIsInStoppageMode || mStoppageId != null) {
+                    updateUserStatusIndicator(UserId);
+                }
+
+            }
+        });
+
+        SharedPreferences preferences = getContext().getSharedPreferences(
+                getString(R.string.preferences_file_key), Context.MODE_PRIVATE);
+        if (preferences.getBoolean("enableUserStatus", true)) {
+            ConstraintLayout clUserStatusContainer = (ConstraintLayout) view.findViewById(R.id.clUserStatusContainer);
+            clUserStatusContainer.setVisibility(View.VISIBLE);
+        }
+        else{
+            ConstraintLayout clUserStatusContainer = (ConstraintLayout) view.findViewById(R.id.clUserStatusContainer);
+            clUserStatusContainer.setVisibility(View.GONE);
+        }
+
         view.setBackgroundColor(Color.WHITE);
-
-        TextView tvStoppageLabel = (TextView)view.findViewById(R.id.tvStoppageDescriptionLabel);
-        EditText etStoppageDesc = (EditText)view.findViewById(R.id.etStoppageDescription);
-
-        //tvStoppageLabel.setEnabled(false);
-        tvStoppageLabel.setVisibility(View.INVISIBLE);
-        //etStoppageDesc.setEnabled(false);
-        etStoppageDesc.setVisibility(View.INVISIBLE);
+//
+//        TextView tvStoppageLabel = (TextView) view.findViewById(R.id.tvStoppageDescriptionLabel);
+//        EditText etStoppageDesc = (EditText) view.findViewById(R.id.etStoppageDescription);
+//
+//        //tvStoppageLabel.setEnabled(false);
+//        tvStoppageLabel.setVisibility(View.INVISIBLE);
+//        //etStoppageDesc.setEnabled(false);
+//        etStoppageDesc.setVisibility(View.INVISIBLE);
 
 
         boolean staticStation = prefs.getBoolean(
-                getString(R.string.preferences_staticStation),false);
+                getString(R.string.preferences_staticStation), false);
 
         String stationName = prefs.getString(
                 getString(R.string.preferences_station_name), "");
@@ -186,27 +238,27 @@ public class dataDisplayFragment extends Fragment
 
         // if static station and static value present then do not update
         if (!staticStation || !stationList.contains(stationName)) {
-            if (!stationList.contains(stationName)){
+            if (!stationList.contains(stationName)) {
                 stationName = null;
             }
             setStationIdSpinner(view, stationList, stationName);
-        }
-        else{
+        } else {
             ArrayList<String> arrayList = new ArrayList<>();
             arrayList.add(stationName);
 
             setStationIdSpinner(view, arrayList, stationName);
         }
 
+
         return view;
     }
 
-    private void setStationIdSpinner(View view, ArrayList<String> stationList, String Value){
+    private void setStationIdSpinner(View view, ArrayList<String> stationList, String Value) {
         Spinner spStationIdValue;
         if (view == null)
             spStationIdValue = (Spinner) (getActivity().findViewById(R.id.spStationIdValue));
         else
-            spStationIdValue = (Spinner)view.findViewById(R.id.spStationIdValue);
+            spStationIdValue = (Spinner) view.findViewById(R.id.spStationIdValue);
 
         Context thisContext = getContext();
 
@@ -216,66 +268,59 @@ public class dataDisplayFragment extends Fragment
 
         int stationIndex = stationList.indexOf(Value);
 
-        if (Value != null && (stationIndex > 0)){
+        if (Value != null && (stationIndex > 0)) {
             spStationIdValue.setSelection(stationIndex);
         }
     }
 
     @Override
-    public void onResume()
-    {
+    public void onResume() {
         super.onResume();
         mRequestQueue.start();
         initServerCheckTimer();
         mServerCheckTimer = new Timer();
-        mServerCheckTimer.schedule(mServerCheckTimerTask, 1000,5000);
+        mServerCheckTimer.schedule(mServerCheckTimerTask, 1000, 5000);
     }
 
-    private void initServerCheckTimer()
-    {
-        mServerCheckTimerTask = new TimerTask()
-        {
+    private void initServerCheckTimer() {
+        mServerCheckTimerTask = new TimerTask() {
             @Override
-            public void run()
-            {
+            public void run() {
                 Log.d(TAG, "run: checking server connectivity");
                 SharedPreferences preferences = getContext().getSharedPreferences(
                         getString(R.string.preferences_file_key),
                         Context.MODE_PRIVATE);
 
                 String ipAddress = preferences.getString(
-                        "serverURL","");
+                        getString(R.string.prefs_server_base_address), "");
 
-                if(ipAddress == "")
-                {
+                if (ipAddress == "") {
                     // Get a handler that can be used to post to the main thread
                     Handler mainHandler = new Handler(getContext().getMainLooper());
 
                     Runnable runnable = new Runnable() {
                         @Override
-                        public void run()
-                        {
+                        public void run() {
                             Toast.makeText(
-                                    getContext(),
-                                    "Please set server address in settings",
-                                    Toast.LENGTH_LONG)
-                            .show();
+                                            getContext(),
+                                            "Please set server address in settings",
+                                            Toast.LENGTH_LONG)
+                                    .show();
                         }
                     };
 
                     mainHandler.post(runnable);
-                }
-                else {
+                } else {
                     //check server connected by sending heartbeat, every 10 heartbeats update stations
-                    if (mHeartbeatCounter == 0){
+                    if (mHeartbeatCounter == 0) {
                         setStations();
                         getStoppageReasons();
-                    }else {
+                    } else {
                         String serverAddress = getUrlFromIpAddress(ipAddress);
                         checkServerConnected(serverAddress);
                     }
                     mHeartbeatCounter++;
-                    if (mHeartbeatCounter > 10){
+                    if (mHeartbeatCounter > 10) {
                         mHeartbeatCounter = 0;
                     }
                 }
@@ -283,15 +328,13 @@ public class dataDisplayFragment extends Fragment
         };
     }
 
-    private void checkServerConnected(String url)
-    {
-        if(isConnectedToWifiNetwork())
-        {
-            SharedPreferences prefs =getContext().getSharedPreferences(
+    private void checkServerConnected(String url) {
+        if (isConnectedToWifiNetwork()) {
+            SharedPreferences prefs = getContext().getSharedPreferences(
                     getString(R.string.preferences_file_key), Context.MODE_PRIVATE);
-            String appVersion =  getString(R.string.app_version);
+            String appVersion = getString(R.string.app_version);
 
-            Spinner spStationIdValue = (Spinner)(getActivity().findViewById(R.id.spStationIdValue));
+            Spinner spStationIdValue = (Spinner) (getActivity().findViewById(R.id.spStationIdValue));
             // the station location is used by default, and the display name is used as a fallback
             // This might need reworking, but let's see how it goes
             String appIdentifierName = "";
@@ -299,8 +342,7 @@ public class dataDisplayFragment extends Fragment
             if (spStationIdValue.getSelectedItem() != null)
                 appIdentifierName = spStationIdValue.getSelectedItem().toString();
 
-            if(appIdentifierName == "")
-            {
+            if (appIdentifierName == "") {
                 appIdentifierName = prefs.getString(
                         getString(R.string.preferences_app_id_name),
                         getString(R.string.default_app_id_name)
@@ -315,27 +357,22 @@ public class dataDisplayFragment extends Fragment
             Log.d(TAG, "checkServerConnected: Attempting to get server heartbeat at " + url);
 
             StringRequest request = new StringRequest(Request.Method.GET, url,
-                    new Response.Listener<String>()
-                    {
+                    new Response.Listener<String>() {
                         @Override
-                        public void onResponse(String response)
-                        {
+                        public void onResponse(String response) {
                             // got a response. Do nothing, since the server is reachable.
-                            if (!response.equals("{\"status\":\"success\",\"result\":\"\"}"))
-                            {
+                            if (!response.equals("{\"status\":\"success\",\"result\":\"\"}")) {
                                 // Get a handler that can be used to post to the main thread
                                 Handler mainHandler = new Handler(getContext().getMainLooper());
 
-                                Runnable runnable = new Runnable()
-                                {
+                                Runnable runnable = new Runnable() {
                                     @Override
-                                    public void run()
-                                    {
+                                    public void run() {
                                         Toast.makeText(
-                                                getContext(),
-                                                "Error: Unexpected response from server",
-                                                Toast.LENGTH_LONG)
-                                        .show();
+                                                        getContext(),
+                                                        "Error: Unexpected response from server",
+                                                        Toast.LENGTH_LONG)
+                                                .show();
                                     }
                                 };
 
@@ -347,24 +384,20 @@ public class dataDisplayFragment extends Fragment
                         }
 
                     },
-                    new Response.ErrorListener()
-                    {
+                    new Response.ErrorListener() {
                         @Override
-                        public void onErrorResponse(VolleyError error)
-                        {
+                        public void onErrorResponse(VolleyError error) {
                             // Get a handler that can be used to post to the main thread
                             Handler mainHandler = new Handler(getContext().getMainLooper());
 
-                            Runnable runnable = new Runnable()
-                            {
+                            Runnable runnable = new Runnable() {
                                 @Override
-                                public void run()
-                                {
+                                public void run() {
                                     Toast.makeText(
-                                            getContext(),
-                                            "Error: Unable to reach server",
-                                            Toast.LENGTH_LONG)
-                                    .show();
+                                                    getContext(),
+                                                    "Error: Unable to reach server",
+                                                    Toast.LENGTH_LONG)
+                                            .show();
                                 }
                             };
                             Log.d(TAG, "Heartbeat: Unable to reach server ");
@@ -377,22 +410,18 @@ public class dataDisplayFragment extends Fragment
                     5000, 1, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
             mRequestQueue.add(request);
-        }
-        else
-        {
+        } else {
             // Get a handler that can be used to post to the main thread
             Handler mainHandler = new Handler(getContext().getMainLooper());
 
-            Runnable runnable = new Runnable()
-            {
+            Runnable runnable = new Runnable() {
                 @Override
-                public void run()
-                {
+                public void run() {
                     Toast.makeText(
-                            getContext(),
-                            "Please connect device to wifi",
-                            Toast.LENGTH_LONG)
-                         .show();
+                                    getContext(),
+                                    "Please connect device to wifi",
+                                    Toast.LENGTH_LONG)
+                            .show();
                 }
             };
 
@@ -402,27 +431,25 @@ public class dataDisplayFragment extends Fragment
         }
     }
 
-    private boolean isConnectedToWifiNetwork()
-    {
-        ConnectivityManager connectivityManager = (ConnectivityManager)getContext()
+    private boolean isConnectedToWifiNetwork() {
+        ConnectivityManager connectivityManager = (ConnectivityManager) getContext()
                 .getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
         return networkInfo.isConnected();
     }
 
     @Override
-    public void onPause()
-    {
+    public void onPause() {
         super.onPause();
         mRequestQueue.stop();
-        if(mServerCheckTimer != null)
-        {
+        if (mServerCheckTimer != null) {
             mServerCheckTimer.cancel();
             mServerCheckTimer = null;
         }
     }
 
-    private void setJobStatusOptions(ArrayList<String> optionList){
+
+    private void setJobStatusOptions(ArrayList<String> optionList) {
         Spinner spinner;
         spinner = (Spinner) (getActivity().findViewById(R.id.spJobStatus));
 
@@ -439,16 +466,14 @@ public class dataDisplayFragment extends Fragment
     /**
      * Sets the code displayed in the tbUserIdValue text box
      */
-    void setDisplayedUserIdValue(final String newUserIdValue)
-    {
+    void setDisplayedUserIdValue(final String newUserIdValue) {
         mIsInStoppageMode = false;
         // Get a handler that can be used to post to the main thread
         Handler mainHandler = new Handler(getContext().getMainLooper());
 
         Runnable myRunnable = new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 ArrayList<String> statusNames = new ArrayList<>(
                         Arrays.asList(getResources().getStringArray(R.array.list_work_status))
                 );
@@ -456,17 +481,54 @@ public class dataDisplayFragment extends Fragment
                 TextView tbUserIdValue = (TextView) (getActivity()
                         .findViewById(R.id.tbUserIdValue));
 
-                TextView tvUserIdLabel = (TextView)(getActivity().findViewById(R.id.tvUserIdLable));
+                TextView tvUserIdLabel = (TextView) (getActivity().findViewById(R.id.tvUserIdLable));
                 String userIdLabel = getResources().getString(R.string.user_id_label);
                 tvUserIdLabel.setText(userIdLabel);
 
+                SharedPreferences preferences = getContext().getSharedPreferences(
+                        getString(R.string.preferences_file_key),
+                        Context.MODE_PRIVATE);
+
+                if (preferences.getBoolean("enableUserStatus", true)){
+                    ConstraintLayout clUserStatusContainer = (ConstraintLayout) getActivity().findViewById(R.id.clUserStatusContainer);
+
+                    clUserStatusContainer.setVisibility(View.VISIBLE);
+
+                    TextView tvUserStatus = (TextView) getActivity().findViewById(R.id.tvUserStatus);
+                    TextView tvUserStatusJobId = (TextView) getActivity().findViewById(R.id.tvUserStatusJobId);
+                    TextView tvUserStatusProductId = (TextView) getActivity().findViewById(R.id.tvUserStatusProductId);
+                    TextView tvUserStatusStationId = (TextView) getActivity().findViewById(R.id.tvUserStatusStationId);
+                    String userStatus = "Loading...";
+                    tvUserStatus.setText(userStatus);
+                    tvUserStatus.setBackgroundColor(getResources().getColor(R.color.blankUSerStatusBackgroundColour));
+                    tvUserStatus.setTextColor(getResources().getColor(R.color.blankUserStatusTextColour));
+
+                    tvUserStatusJobId.setText("");
+                    tvUserStatusJobId.setBackgroundColor(getResources().getColor(R.color.blankUSerStatusBackgroundColour));
+                    tvUserStatusJobId.setTextColor(getResources().getColor(R.color.blankUserStatusTextColour));
+
+                    tvUserStatusProductId.setText("");
+                    tvUserStatusProductId.setBackgroundColor(getResources().getColor(R.color.blankUSerStatusBackgroundColour));
+                    tvUserStatusProductId.setTextColor(getResources().getColor(R.color.blankUserStatusTextColour));
+
+                    tvUserStatusStationId.setText("");
+                    tvUserStatusStationId.setBackgroundColor(getResources().getColor(R.color.blankUSerStatusBackgroundColour));
+                    tvUserStatusStationId.setTextColor(getResources().getColor(R.color.blankUserStatusTextColour));
+                }
+                else
+                {
+                    ConstraintLayout clUserStatusContainer = (ConstraintLayout) getActivity().findViewById(R.id.clUserStatusContainer);
+                    clUserStatusContainer.setVisibility(View.GONE);
+                }
+
                 tbUserIdValue.setText(newUserIdValue);
+                updateUserStatusIndicator(newUserIdValue);
 
-                TextView tvStoppageLabel = (TextView)getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
-                EditText etStoppageDesc = (EditText)getActivity().findViewById(R.id.etStoppageDescription);
+                TextView tvStoppageLabel = (TextView) getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
+                EditText etStoppageDesc = (EditText) getActivity().findViewById(R.id.etStoppageDescription);
 
-                tvStoppageLabel.setVisibility(View.INVISIBLE);
-                etStoppageDesc.setVisibility(View.INVISIBLE);
+                tvStoppageLabel.setVisibility(View.GONE);
+                etStoppageDesc.setVisibility(View.GONE);
                 etStoppageDesc.setText("");
             }
         };
@@ -476,15 +538,13 @@ public class dataDisplayFragment extends Fragment
     /**
      * Sets the code displayed in the tbJobIdValue text box
      */
-    void setDisplayedJobIdValue(final String newJobIdValue)
-    {
+    void setDisplayedJobIdValue(final String newJobIdValue) {
         // Get a handler that can be used to post to the main thread
         Handler mainHandler = new Handler(getContext().getMainLooper());
 
         Runnable myRunnable = new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 TextView tbJobIdValue = (TextView) (getActivity()
                         .findViewById(R.id.tbJobIdValue));
 
@@ -494,15 +554,13 @@ public class dataDisplayFragment extends Fragment
         mainHandler.post(myRunnable);
     }
 
-    void setDisplayedStoppageName(final String newStoppageName)
-    {
+    void setDisplayedStoppageName(final String newStoppageName) {
         // Get a handler that can be used to post to the main thread
         Handler mainHandler = new Handler(getContext().getMainLooper());
 
         Runnable myRunnable = new Runnable() {
             @Override
-            public void run()
-            {
+            public void run() {
                 ArrayList<String> statusNames = new ArrayList<>(
                         Arrays.asList(getResources().getStringArray(R.array.stoppage_status))
                 );
@@ -512,7 +570,7 @@ public class dataDisplayFragment extends Fragment
                         getString(R.string.preferences_file_key),
                         Context.MODE_PRIVATE);
 
-                TextView tvUserIdLabel = (TextView)(getActivity().findViewById(R.id.tvUserIdLable));
+                TextView tvUserIdLabel = (TextView) (getActivity().findViewById(R.id.tvUserIdLable));
                 String stoppageLabel = "Stoppage:";
                 tvUserIdLabel.setText(stoppageLabel);
 
@@ -524,10 +582,12 @@ public class dataDisplayFragment extends Fragment
 
                 tbstoppageIdValue.setText(newStoppageName);
 
-                if(preferences.getBoolean("allowStoppageDescription", true)){
-                    TextView tvStoppageLabel = (TextView)getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
-                    EditText etStoppageDesc = (EditText)getActivity().findViewById(R.id.etStoppageDescription);
+                if (preferences.getBoolean("allowStoppageDescription", true)) {
+                    TextView tvStoppageLabel = (TextView) getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
+                    EditText etStoppageDesc = (EditText) getActivity().findViewById(R.id.etStoppageDescription);
+                    ConstraintLayout clUserStatusContainer = (ConstraintLayout) getActivity().findViewById(R.id.clUserStatusContainer);
 
+                    clUserStatusContainer.setVisibility(View.GONE);
                     tvStoppageLabel.setVisibility(View.VISIBLE);
                     etStoppageDesc.setVisibility(View.VISIBLE);
                 }
@@ -536,80 +596,71 @@ public class dataDisplayFragment extends Fragment
         mainHandler.post(myRunnable);
     }
 
-    public void UpdateDisplayedbarcodeReading(final String barcodeValue)
-    {
+    public void UpdateDisplayedbarcodeReading(final String barcodeValue) {
         // note that "barcode" might refer to a QR code or other type
-        if(!barcodeValue.equals(mCurrentBarcodeValue))
-        {
+        if (!barcodeValue.equals(mCurrentBarcodeValue)) {
             Looper myLooper = Looper.myLooper();
             SharedPreferences preferences = getContext().getSharedPreferences(
                     getString(R.string.preferences_file_key),
                     Context.MODE_PRIVATE);
 
             String userPrefix = preferences.getString(
-                    "userPrefix","");
+                    "userPrefix", "user_");
 
             String stoppagePrefix = preferences.getString(
                     "stoppagePrefix", "stpg_");
 
             String prefix = "";
-            if(barcodeValue.length() >= 5) {
+            if (barcodeValue.length() >= 5) {
                 prefix = barcodeValue.substring(0, 5);
             }
 
-            if (prefix.equals(userPrefix))
-            {
+            if (prefix.equals(userPrefix)) {
                 mIsInStoppageMode = false;
                 mStoppageId = null;
                 setDisplayedUserIdValue(barcodeValue);
-            }
-            else if (prefix.equals(stoppagePrefix))
-            {
+            } else if (prefix.equals(stoppagePrefix)) {
                 String stoppageReason = mStoppageReasons.get(barcodeValue);
-                if(stoppageReason != null)
-                {
+                if (stoppageReason != null) {
                     mIsInStoppageMode = true;
                     mStoppageId = barcodeValue;
                     setDisplayedStoppageName(stoppageReason);
-                }
-                else
-                {
+                } else {
                     // Get a handler that can be used to post to the main thread
                     Handler mainHandler = new Handler(getContext().getMainLooper());
 
                     Runnable runnable = new Runnable() {
                         @Override
-                        public void run()
-                        {
+                        public void run() {
                             Toast.makeText(
-                                    getContext(),
-                                    "Unknown stoppage ID",
-                                    Toast.LENGTH_LONG)
+                                            getContext(),
+                                            "Unknown stoppage ID",
+                                            Toast.LENGTH_LONG)
                                     .show();
                         }
                     };
 
                     mainHandler.post(runnable);
                 }
-            }
-            else
-            {
+            } else {
                 setDisplayedJobIdValue(barcodeValue);
             }
 
             mCurrentBarcodeValue = barcodeValue;
             mDataDisplayInteractionCallback.onBarcodeSeen();
-            Vibrator v = (Vibrator)getActivity().getSystemService(Context.VIBRATOR_SERVICE);
-            v.vibrate(500);
+            if (preferences.getBoolean("enableVibration", true)) {
+                Vibrator v = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                v.vibrate(500);
+            }
         }
     }
-    private void transmitData(String serverUrl)
-    {
+
+    private void transmitData(String serverUrl) {
         if (serverUrl != null) {
 
             serverUrl = getUrlFromIpAddress(serverUrl);
 
-            Map<String, String> params = getParameterMap();
+            final Map<String, String> params = getParameterMap();
             if (params == null)
                 return;
 
@@ -642,13 +693,13 @@ public class dataDisplayFragment extends Fragment
                                 resetDisplay();
 
                                 String responseState = null;
-                                if(responseValues.containsKey("state"))
+                                if (responseValues.containsKey("state"))
                                     responseState = responseValues.get("state");
                                 else if (responseValues.containsKey("result"))
-                                   responseState = responseValues.get("result");
+                                    responseState = responseValues.get("result");
 
                                 if (responseState.equals("clockedOn")) {
-                                    if(useFullscreenConfirmations)
+                                    if (useFullscreenConfirmations)
                                         mDataDisplayInteractionCallback.onClockedOn(params.get("jobId"));
                                     else {
                                         screenMsg = "Clocked ON";
@@ -658,7 +709,7 @@ public class dataDisplayFragment extends Fragment
                                     boolean quantityComplete = preferences.getBoolean(
                                             getString(R.string.preferences_quantity_complete), false);
 
-                                    if(useFullscreenConfirmations)
+                                    if (useFullscreenConfirmations)
                                         mDataDisplayInteractionCallback.onClockedOff(params.get("jobId"));
                                     else {
                                         screenMsg = "Clocked OFF";
@@ -667,20 +718,18 @@ public class dataDisplayFragment extends Fragment
 
                                     if (quantityComplete)
                                         requestQuantityComplete(Integer.parseInt(responseValues.get("logRef")));
-                                }
-                                else if (responseState.equals("stoppageOn")) {
-                                    if(useFullscreenConfirmations)
+                                } else if (responseState.equals("stoppageOn")) {
+                                    if (useFullscreenConfirmations)
                                         mDataDisplayInteractionCallback.onStoppageStart(
                                                 params.get("jobId"),
                                                 mStoppageReasons.get(params.get("stoppageId"))
                                         );
-                                    else{
+                                    else {
                                         textColour = "ffffff";
                                         screenMsg = "Stoppage Start Recorded";
                                     }
-                                }
-                                else if (responseState.equals("stoppageOff")) {
-                                    if(useFullscreenConfirmations)
+                                } else if (responseState.equals("stoppageOff")) {
+                                    if (useFullscreenConfirmations)
                                         mDataDisplayInteractionCallback.onStoppageEnd(
                                                 params.get("jobId"),
                                                 mStoppageReasons.get(params.get("stoppageId"))
@@ -689,8 +738,7 @@ public class dataDisplayFragment extends Fragment
                                         textColour = "ffffff";
                                         screenMsg = "Stoppage Resolved";
                                     }
-                                }
-                                else {
+                                } else {
                                     screenMsg = responseState;
                                 }
                             } else {
@@ -698,10 +746,10 @@ public class dataDisplayFragment extends Fragment
                                 textColour = "ffffff";
                             }
 
-                            if(screenMsg != "") {
+                            if (screenMsg != "") {
                                 Toast.makeText(getContext(),
-                                        Html.fromHtml("<font font-size='200%' color='#" + textColour + "' >" + screenMsg + "</font>"),
-                                        Toast.LENGTH_LONG)
+                                                Html.fromHtml("<font font-size='200%' color='#" + textColour + "' >" + screenMsg + "</font>"),
+                                                Toast.LENGTH_LONG)
                                         .show();
                             }
 
@@ -738,18 +786,18 @@ public class dataDisplayFragment extends Fragment
         }
     }
 
-    private Map<String, String> getParameterMap(){
-        Map<String,String> params = new HashMap<String, String>();
+    private Map<String, String> getParameterMap() {
+        Map<String, String> params = new HashMap<String, String>();
 
         SharedPreferences preferences = getContext().getSharedPreferences(
                 getString(R.string.preferences_file_key),
                 Context.MODE_PRIVATE);
 
         String stationName = preferences.getString(
-                getString(R.string.preferences_station_name),"");
+                getString(R.string.preferences_station_name), "");
 
         String userPrefix = preferences.getString(
-                getString(R.string.preferences_user_prefix),"");
+                getString(R.string.preferences_user_prefix), "");
 
         Spinner spStationIdValue = (Spinner) (getActivity().findViewById(R.id.spStationIdValue));
         EditText tbUserIdValue = (EditText) (getActivity().findViewById(R.id.tbUserIdValue));
@@ -762,8 +810,7 @@ public class dataDisplayFragment extends Fragment
 
         String userIdValue = null;
 
-        if(mIsInStoppageMode == false)
-        {
+        if (mIsInStoppageMode == false) {
             userIdValue = tbUserIdValue.getText().toString();
 
             // if user prefix absent add it, this allows only number section to be entered
@@ -783,12 +830,11 @@ public class dataDisplayFragment extends Fragment
 
             if (stationIdValue.equals("")) {
                 Toast.makeText(getContext(),
-                        Html.fromHtml("<font color='#" + "ffffff" + "' >" +
-                                "Station Id Missing" + "</font>"),
-                        Toast.LENGTH_LONG)
+                                Html.fromHtml("<font color='#" + "ffffff" + "' >" +
+                                        "Station Id Missing" + "</font>"),
+                                Toast.LENGTH_LONG)
                         .show();
-            }
-            else{
+            } else {
                 if (mIsInStoppageMode && userIdValue.equals("") && jobIdValue.equals(""))
                     missingCode = "User & Job ID";
                 else {
@@ -799,28 +845,25 @@ public class dataDisplayFragment extends Fragment
                 }
 
                 Toast.makeText(getContext(),
-                    Html.fromHtml("<font color='#" + "ffffff" + "' >" +
-                            "Scan " + missingCode + "</font>"),
-                    Toast.LENGTH_LONG)
-                    .show();
+                                Html.fromHtml("<font color='#" + "ffffff" + "' >" +
+                                        "Scan " + missingCode + "</font>"),
+                                Toast.LENGTH_LONG)
+                        .show();
             }
-        }else {
-            if(mIsInStoppageMode)
-            {
-                params.put("request","recordStoppage");
+        } else {
+            if (mIsInStoppageMode) {
+                params.put("request", "recordStoppage");
                 params.put("stoppageId", mStoppageId);
                 params.put("jobId", jobIdValue);
                 params.put("stationId", stationIdValue);
                 params.put("jobStatus", jobStatus);
 
                 // the user may optionally provide a brief description, depending on app settings
-                if(preferences.getBoolean("allowStoppageDescription", false)){
-                    EditText etStoppageDesc = (EditText)getActivity().findViewById(R.id.etStoppageDescription);
+                if (preferences.getBoolean("allowStoppageDescription", false)) {
+                    EditText etStoppageDesc = (EditText) getActivity().findViewById(R.id.etStoppageDescription);
                     params.put("description", etStoppageDesc.getText().toString());
                 }
-            }
-            else
-            {
+            } else {
                 params.put("request", "clockUser");
                 params.put("jobId", jobIdValue);//mReworkData.jobValue); // TODO
                 params.put("userId", userIdValue);//mReworkData.userValue);
@@ -834,7 +877,7 @@ public class dataDisplayFragment extends Fragment
         return params;
     }
 
-    private String buildUri(String serverAddress, Map<String, String> params){
+    private String buildUri(String serverAddress, Map<String, String> params) {
 
         String builtUri = null;
 
@@ -851,18 +894,18 @@ public class dataDisplayFragment extends Fragment
     }
 
     // convert user chosen work status to the format required by server
-    private String getSystemWorkStatus(String workStatus){
+    private String getSystemWorkStatus(String workStatus) {
         String systemWorkStatus = "";
 
         String[] status_list = getResources().getStringArray(R.array.list_work_status);
         String[] status_list_values = getResources().getStringArray(R.array.list_work_status_values);
         String[] stoppageStatusList = getResources().getStringArray(R.array.stoppage_status);
         String[] stoppageStatusListValues = getResources().getStringArray(
-                                                                R.array.stoppage_status_values
-                                                            );
+                R.array.stoppage_status_values
+        );
 
         int index = -1;
-        if(!mIsInStoppageMode) {
+        if (!mIsInStoppageMode) {
             for (int i = 0; i < status_list.length; i++) {
                 if (status_list[i].equals(workStatus)) {
                     index = i;
@@ -875,9 +918,7 @@ public class dataDisplayFragment extends Fragment
             } else {
                 systemWorkStatus = status_list_values[index];
             }
-        }
-        else
-        {
+        } else {
             for (int i = 0; i < stoppageStatusList.length; i++) {
                 if (stoppageStatusList[i].equals(workStatus)) {
                     index = i;
@@ -895,8 +936,7 @@ public class dataDisplayFragment extends Fragment
         return systemWorkStatus;
     }
 
-    private Map<String, String> getResponseValues(JSONObject serverResponse)
-    {
+    private Map<String, String> getResponseValues(JSONObject serverResponse) {
         Map<String, String> responseValues = new HashMap<String, String>();
 
         String status = "";
@@ -908,17 +948,14 @@ public class dataDisplayFragment extends Fragment
             if (status.equals("success")) {
                 // result might be a json object or a string. Test for type using optJSONObject
                 JSONObject jsonResult = serverResponse.optJSONObject("result");
-                if(jsonResult != null) {
+                if (jsonResult != null) {
                     responseValues.put("state", jsonResult.getString("state"));
                     responseValues.put("logRef", jsonResult.getString("logRef"));
-                }
-                else
-                {
-                    String result = serverResponse.optString("result",null);
+                } else {
+                    String result = serverResponse.optString("result", null);
                     responseValues.put("result", result);
                 }
-            }
-            else{
+            } else {
                 responseValues.put("result", serverResponse.getString("result"));
             }
         } catch (JSONException e) {
@@ -931,8 +968,7 @@ public class dataDisplayFragment extends Fragment
         return responseValues;
     }
 
-    private void onBtnSendPressed()
-    {
+    private void onBtnSendPressed() {
         // Todo
 //        if (mReworkData.userValue == null)
 //        {
@@ -946,33 +982,29 @@ public class dataDisplayFragment extends Fragment
                 Context.MODE_PRIVATE);
 
         String serverAddress = preferences.getString(
-                "serverURL","");
+                getString(R.string.prefs_server_base_address), "");
 
-        if(serverAddress == "")
-        {
+        if (serverAddress == "") {
             Toast.makeText(getContext(),
                     "Please enter server address in the settings",
                     Toast.LENGTH_SHORT).show();
             return;
-        }
-        else
+        } else
             transmitData(serverAddress);
     }
 
-    private void onBtnCancelPressed()
-    {
+    private void onBtnCancelPressed() {
         resetDisplay();
         mDataDisplayInteractionCallback.onBarcodeReadHandled();
     }
 
-    void resetDisplay()
-    {
+    void resetDisplay() {
         SharedPreferences preferences = getContext().getSharedPreferences(
                 getString(R.string.preferences_file_key),
                 Context.MODE_PRIVATE);
 
         Boolean rememberUserPref = preferences.getBoolean(
-                "rememberUser",false);
+                "rememberUser", false);
 
         mIsInStoppageMode = false;
         mStoppageId = null;
@@ -983,11 +1015,11 @@ public class dataDisplayFragment extends Fragment
         setJobStatusOptions(statusNames);
 
 
-        TextView tvUserIdLabel = (TextView)(getActivity().findViewById(R.id.tvUserIdLable));
+        TextView tvUserIdLabel = (TextView) (getActivity().findViewById(R.id.tvUserIdLable));
         String userIdLabel = getResources().getString(R.string.user_id_label);
         tvUserIdLabel.setText(userIdLabel);
 
-        if (!rememberUserPref){
+        if (!rememberUserPref) {
             setDisplayedUserIdValue("");
         }
 
@@ -996,11 +1028,20 @@ public class dataDisplayFragment extends Fragment
         Spinner spJobStatus = (Spinner) (getActivity().findViewById(R.id.spJobStatus));
         spJobStatus.setSelection(0);
 
-        TextView tvStoppageLabel = (TextView)getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
-        EditText etStoppageDesc = (EditText)getActivity().findViewById(R.id.etStoppageDescription);
+        if (preferences.getBoolean("enableUserStatus", true)) {
+            ConstraintLayout clUserStatusContainer = (ConstraintLayout) getActivity().findViewById(R.id.clUserStatusContainer);
+            clUserStatusContainer.setVisibility(View.VISIBLE);
+        }
+        else {
+            ConstraintLayout clUserStatusContainer = (ConstraintLayout) getActivity().findViewById(R.id.clUserStatusContainer);
+            clUserStatusContainer.setVisibility(View.GONE);
+        }
 
-        tvStoppageLabel.setVisibility(INVISIBLE);
-        etStoppageDesc.setVisibility(INVISIBLE);
+        TextView tvStoppageLabel = (TextView) getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
+        EditText etStoppageDesc = (EditText) getActivity().findViewById(R.id.etStoppageDescription);
+
+        tvStoppageLabel.setVisibility(View.GONE);
+        etStoppageDesc.setVisibility(View.GONE);
         etStoppageDesc.setText("");
 
         mReworkData.jobValue = null;
@@ -1015,33 +1056,31 @@ public class dataDisplayFragment extends Fragment
         setSendBtnEnabled(true);
     }
 
-    public String getUrlFromIpAddress(String ipAddress){
+    public String getUrlFromIpAddress(String ipAddress) {
         String path = getResources().getString(R.string.server_client_input_path);
-        return ("http://" + ipAddress + path);
+        return (ipAddress + path);
     }
 
-    public void setStations(){
+    public void setStations() {
 
         SharedPreferences preferences = getContext().getSharedPreferences(
                 getString(R.string.preferences_file_key),
                 Context.MODE_PRIVATE);
         String ipAddress = preferences.getString(
-                "serverURL","");
+                getString(R.string.prefs_server_base_address), "");
 
-        if(ipAddress == "")
-        {
+        if (ipAddress == "") {
             Toast.makeText(getContext(),
                     "Please enter server address in the settings",
                     Toast.LENGTH_SHORT).show();
             return;
-        }
-        else{
+        } else {
 
             String path = getResources().getString(R.string.server_stations_path);
 
-            String serverUrl = "http://" + ipAddress + path;
+            String serverUrl = ipAddress + path;
 
-            Map<String,String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<String, String>();
             params.put("request", "getAllScannerNames");
 
             Log.d(TAG, "Parameters- " + params);
@@ -1068,15 +1107,14 @@ public class dataDisplayFragment extends Fragment
 
                             if (status.equals("success")) {
                                 try {
-                                    
+
                                     JSONArray jsonStations = response.getJSONArray("result");
 
                                     JSONObject stationArray;
                                     ArrayList<String> stationList = new ArrayList<>();
 
                                     Log.d(TAG, "Got updated Station list");
-                                    for (int i = 0, size = jsonStations.length(); i < size; i++)
-                                    {
+                                    for (int i = 0, size = jsonStations.length(); i < size; i++) {
                                         //stationArray = jsonStations.getJSONObject(i);
                                         //stationList.add(stationArray.getString("stationId"));
                                         stationList.add(jsonStations.getString(i));
@@ -1091,7 +1129,7 @@ public class dataDisplayFragment extends Fragment
                                     editor.apply();
 
                                     boolean staticStation = prefs.getBoolean(
-                                            getString(R.string.preferences_staticStation),false);
+                                            getString(R.string.preferences_staticStation), false);
 
                                     String stationName = prefs.getString(
                                             getString(R.string.preferences_station_name), "");
@@ -1126,10 +1164,10 @@ public class dataDisplayFragment extends Fragment
                                 }
 
                                 Toast.makeText(getContext(),
-                                        screenMsg,
-                                        Toast.LENGTH_LONG)
+                                                screenMsg,
+                                                Toast.LENGTH_LONG)
                                         .show();
-                                Log.d(TAG, "$$ Error requesting stations- "+ screenMsg);
+                                Log.d(TAG, "$$ Error requesting stations- " + screenMsg);
                             }
 
                             //TODO: fill in response functionality
@@ -1153,8 +1191,8 @@ public class dataDisplayFragment extends Fragment
 
                 @Override
                 public String getBodyContentType() {
-                return "application/x-www-form-urlencoded; charset=UTF-8";
-            }
+                    return "application/x-www-form-urlencoded; charset=UTF-8";
+                }
             };
             Log.d(TAG, "Request URL-" + request.getUrl());
             //request.setShouldCache(false);
@@ -1162,25 +1200,23 @@ public class dataDisplayFragment extends Fragment
         }
     }
 
-    public void getStoppageReasons(){
+    public void getStoppageReasons() {
 
         SharedPreferences preferences = getContext().getSharedPreferences(
                 getString(R.string.preferences_file_key),
                 Context.MODE_PRIVATE);
         String ipAddress = preferences.getString(
-                "serverURL","");
+                getString(R.string.prefs_server_base_address), "");
 
-        if(ipAddress == "")
-        {
+        if (ipAddress == "") {
             return;
-        }
-        else{
+        } else {
 
             String path = getResources().getString(R.string.server_stoppages_path);
 
-            String serverUrl = "http://" + ipAddress + path;
+            String serverUrl = ipAddress + path;
 
-            Map<String,String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<String, String>();
             params.put("request", "getStoppageReasonTableData");
             params.put("tableOrdering", "byAlphabetic");
 
@@ -1214,8 +1250,7 @@ public class dataDisplayFragment extends Fragment
 
                                     mStoppageReasons.clear();
 
-                                    for (int i = 0, size = jsonReasonsArray.length(); i < size; i++)
-                                    {
+                                    for (int i = 0, size = jsonReasonsArray.length(); i < size; i++) {
                                         jsonStoppageReason = jsonReasonsArray.getJSONObject(i);
                                         mStoppageReasons.put(
                                                 jsonStoppageReason.getString("stoppageReasonId"),
@@ -1241,10 +1276,10 @@ public class dataDisplayFragment extends Fragment
                                 }
 
                                 Toast.makeText(getContext(),
-                                        screenMsg,
-                                        Toast.LENGTH_LONG)
+                                                screenMsg,
+                                                Toast.LENGTH_LONG)
                                         .show();
-                                Log.d(TAG, "$$ Error requesting stoppages- "+ screenMsg);
+                                Log.d(TAG, "$$ Error requesting stoppages- " + screenMsg);
                             }
 
                             //TODO: fill in response functionality
@@ -1277,15 +1312,13 @@ public class dataDisplayFragment extends Fragment
         }
     }
 
-    private void setSendBtnEnabled(boolean enabled)
-    {
-        Button btnSend = (Button)getActivity().findViewById(R.id.btnSend);
+    private void setSendBtnEnabled(boolean enabled) {
+        Button btnSend = (Button) getActivity().findViewById(R.id.btnSend);
         btnSend.setEnabled(enabled);
     }
 
     // Ask for number of items completed while clocked on and send input to server
-    private void requestQuantityComplete(final int timelogRef)
-    {
+    private void requestQuantityComplete(final int timelogRef) {
         Context thisContext = getContext();
 
         AlertDialog.Builder builder = new AlertDialog.Builder(thisContext);
@@ -1317,22 +1350,21 @@ public class dataDisplayFragment extends Fragment
         builder.show();
     }
 
-    private void transmitQuantityComplete(int timelogRef, int quantityComplete){
+    private void transmitQuantityComplete(int timelogRef, int quantityComplete) {
 
         SharedPreferences preferences = getContext().getSharedPreferences(
                 getString(R.string.preferences_file_key),
                 Context.MODE_PRIVATE);
 
         String ipAddress = preferences.getString(
-                "serverURL","");
+                getString(R.string.prefs_server_base_address), "");
 
-        if(ipAddress != "")
-        {
+        if (ipAddress != "") {
             String path = getResources().getString(R.string.server_client_input_path);
 
-            String serverUrl = "http://" + ipAddress + path;
+            String serverUrl = ipAddress + path;
 
-            Map<String,String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<String, String>();
             params.put("request", "recordNumberCompleted");
             params.put("logRef", Integer.toString(timelogRef));
             params.put("numberCompleted", Integer.toString(quantityComplete));
@@ -1368,8 +1400,8 @@ public class dataDisplayFragment extends Fragment
                             }
 
                             Toast.makeText(getContext(),
-                                    screenMsg,
-                                    Toast.LENGTH_LONG)
+                                            screenMsg,
+                                            Toast.LENGTH_LONG)
                                     .show();
                             Log.d(TAG, screenMsg);
 
@@ -1399,19 +1431,19 @@ public class dataDisplayFragment extends Fragment
 
     }
 
-    public void handleRequestError(VolleyError error){
+    public void handleRequestError(VolleyError error) {
         if (error.networkResponse == null) {
 
             if (error.getClass().equals(TimeoutError.class)) {
                 Toast.makeText(getContext(),
-                        "Error: No response from server",
-                        Toast.LENGTH_LONG)
+                                "Error: No response from server",
+                                Toast.LENGTH_LONG)
                         .show();
                 Log.d(TAG, "$$onErrorReponse: Sent data to server. No response");
-            }else{
+            } else {
                 Toast.makeText(getContext(),
-                        "Error: Network response",
-                        Toast.LENGTH_LONG)
+                                "Error: Network response",
+                                Toast.LENGTH_LONG)
                         .show();
 
                 Log.d(TAG, "$$error.networkResponse == null- " + error.getMessage());
@@ -1420,11 +1452,164 @@ public class dataDisplayFragment extends Fragment
         } else {
             Log.d(TAG, "$$onErrorResponse: " + error.getMessage());
             Toast.makeText(getContext(),
-                    "An error occured. Try again.",
-                    Toast.LENGTH_LONG)
+                            "An error occured. Try again.",
+                            Toast.LENGTH_LONG)
                     .show();
         }
 
         setSendBtnEnabled(true);
+    }
+
+
+
+    public void updateUserStatusIndicator(String userId) {
+        // needs a valid user id, otherwise blank indicator
+
+        if (userId.length() == 0 || userId == null || userId == "" || userId == " "){
+            Handler mainHandler = new Handler(getContext().getMainLooper());
+
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+
+                    TextView tvUserStatus = (TextView) getActivity().findViewById(R.id.tvUserStatus);
+                    TextView tvUserStatusJobId = (TextView) getActivity().findViewById(R.id.tvUserStatusJobId);
+                    TextView tvUserStatusProductId = (TextView) getActivity().findViewById(R.id.tvUserStatusProductId);
+                    TextView tvUserStatusStationId = (TextView) getActivity().findViewById(R.id.tvUserStatusStationId);
+                    String userStatus = "";
+                    tvUserStatus.setText(userStatus);
+                    tvUserStatus.setBackgroundColor(getResources().getColor(R.color.blankUSerStatusBackgroundColour));
+                    tvUserStatus.setTextColor(getResources().getColor(R.color.blankUserStatusTextColour));
+
+                    tvUserStatusJobId.setText("");
+                    tvUserStatusJobId.setBackgroundColor(getResources().getColor(R.color.blankUSerStatusBackgroundColour));
+                    tvUserStatusJobId.setTextColor(getResources().getColor(R.color.blankUserStatusTextColour));
+
+                    tvUserStatusProductId.setText("");
+                    tvUserStatusProductId.setBackgroundColor(getResources().getColor(R.color.blankUSerStatusBackgroundColour));
+                    tvUserStatusProductId.setTextColor(getResources().getColor(R.color.blankUserStatusTextColour));
+
+                    tvUserStatusStationId.setText("");
+                    tvUserStatusStationId.setBackgroundColor(getResources().getColor(R.color.blankUSerStatusBackgroundColour));
+                    tvUserStatusStationId.setTextColor(getResources().getColor(R.color.blankUserStatusTextColour));
+
+                }
+            };
+
+            mainHandler.post(runnable);
+
+            return;
+        }
+        if (!userId.startsWith("user_")) {
+            userId = "user_" + userId;
+        }
+
+        SharedPreferences preferences = getContext().getSharedPreferences(
+                getString(R.string.preferences_file_key),
+                Context.MODE_PRIVATE);
+
+        String ipAddress = preferences.getString(
+                getString(R.string.prefs_server_base_address), "");
+
+        if (ipAddress == "") {
+            Toast.makeText(getContext(),
+                    "Please enter server address in the settings",
+                    Toast.LENGTH_SHORT).show();
+            return;
+        } else {
+
+            String path = "/timelogger/scripts/server/current_users.php";
+
+            String serverUrl = ipAddress + path;
+
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("request", "GetUserStatus");
+            params.put("userId", userId);
+
+            Log.d(TAG, "Parameters- " + params);
+
+            String uri = buildUri(serverUrl, params);
+
+            Log.d(TAG, "Server Address" + uri);
+
+            Log.d(TAG, "*****************************************************");
+
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, uri, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject jsonResponse) {
+                            try {
+                                TextView tvUserStatus = (TextView) getActivity().findViewById(R.id.tvUserStatus);
+                                TextView tvUserStatusJobId = (TextView) getActivity().findViewById(R.id.tvUserStatusJobId);
+                                TextView tvUserStatusProductId = (TextView) getActivity().findViewById(R.id.tvUserStatusProductId);
+                                TextView tvUserStatusStationId = (TextView) getActivity().findViewById(R.id.tvUserStatusStationId);
+                                if (jsonResponse.getString("status").equals("success"))
+                                {
+                                    JSONObject result = jsonResponse.getJSONObject("result");
+                                    String userStatus = "";
+                                    if (result.getString("status").equals("clockedOn"))
+                                    {
+                                        userStatus = "status: Clocked ON";
+                                        tvUserStatus.setBackgroundColor(getResources().getColor(R.color.clockOnConfirmationBackgroundColour));
+                                        tvUserStatus.setTextColor(getResources().getColor(R.color.clockOnConfirmationTextColour));
+
+                                        String JobId = "Job ID: " + result.getString("jobId");
+                                        tvUserStatusJobId.setText(JobId);
+                                        tvUserStatusJobId.setBackgroundColor(getResources().getColor(R.color.clockOnConfirmationBackgroundColour));
+                                        tvUserStatusJobId.setTextColor(getResources().getColor(R.color.clockOnConfirmationTextColour));
+
+                                        String ProductId = "Product ID: " + result.getString("productId");
+                                        tvUserStatusProductId.setText(ProductId);
+                                        tvUserStatusProductId.setBackgroundColor(getResources().getColor(R.color.clockOnConfirmationBackgroundColour));
+                                        tvUserStatusProductId.setTextColor(getResources().getColor(R.color.clockOnConfirmationTextColour));
+
+                                        String StationId = "Station ID: " + result.getString("stationId");
+                                        tvUserStatusStationId.setText(StationId);
+                                        tvUserStatusStationId.setBackgroundColor(getResources().getColor(R.color.clockOnConfirmationBackgroundColour));
+                                        tvUserStatusStationId.setTextColor(getResources().getColor(R.color.clockOnConfirmationTextColour));
+                                    }
+                                    else
+                                    {
+                                        userStatus = "status: Clocked OFF";
+                                        tvUserStatus.setBackgroundColor(getResources().getColor(R.color.clockOffConfirmationBackgroundColour));
+                                        tvUserStatus.setTextColor(getResources().getColor(R.color.clockOffConfirmationTextColour));
+
+                                        tvUserStatusJobId.setText("");
+                                        tvUserStatusJobId.setBackgroundColor(getResources().getColor(R.color.clockOffConfirmationBackgroundColour));
+                                        tvUserStatusJobId.setTextColor(getResources().getColor(R.color.clockOffConfirmationTextColour));
+
+                                        tvUserStatusProductId.setText("");
+                                        tvUserStatusProductId.setBackgroundColor(getResources().getColor(R.color.clockOffConfirmationBackgroundColour));
+                                        tvUserStatusProductId.setTextColor(getResources().getColor(R.color.clockOffConfirmationTextColour));
+
+                                        tvUserStatusStationId.setText("");
+                                        tvUserStatusStationId.setBackgroundColor(getResources().getColor(R.color.clockOffConfirmationBackgroundColour));
+                                        tvUserStatusStationId.setTextColor(getResources().getColor(R.color.clockOffConfirmationTextColour));
+
+
+                                    }
+                                    tvUserStatus.setText(userStatus);
+                                }
+                                else{
+                                    tvUserStatus.setText("failed to get user status");
+                                }
+
+                            }
+
+                            catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError volleyError) {
+
+                        }
+                    }
+            );
+            mRequestQueue.add(request);
+        }
     }
 }

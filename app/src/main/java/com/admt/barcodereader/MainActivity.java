@@ -1,17 +1,23 @@
 package com.admt.barcodereader;
 
+import android.content.Context;
 import android.content.Intent;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 
 import androidx.appcompat.widget.Toolbar;
 
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-public class MainActivity extends AppCompatActivity
+import java.util.Timer;
+import java.util.TimerTask;
+
+public class MainActivity<mDiscoverServerTimerTask> extends AppCompatActivity
         implements cameraFragment.onBarcodeReadListener,
         dataDisplayFragment.onDataDisplayInteraction,
         numberPadFragment.OnNumpadInteractionListener
@@ -19,7 +25,13 @@ public class MainActivity extends AppCompatActivity
     private cameraFragment mCameraFragment = null;
     private dataDisplayFragment mDataDisplayFragment = null;
     private numberPadFragment mNumPadFragment = null;
+
+    private Timer mDiscoverServerTimer = null;
+    private TimerTask mDiscoverServerTimerTask = null;
+
     boolean torchOn = false;
+
+    private String TAG = "MainActivity";
 
     public void onBarcodeRead(String barcodeValue)
     {
@@ -73,13 +85,13 @@ public class MainActivity extends AppCompatActivity
     }
 
 
+
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
 //        toolbar.setBackgroundColor(Color.parseColor("#be0f34"));
 //        toolbar.setTitleTextColor(0xFFFFFFFF);//Color.parseColor("#fff"));
 //        toolbar.setSubtitleTextColor(0xFFFFFFFF);
@@ -97,6 +109,45 @@ public class MainActivity extends AppCompatActivity
         mDataDisplayFragment = new dataDisplayFragment();
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.dataDisplayFragmentContainer, mDataDisplayFragment).commit();
+
+        // As this app is expected to only have intermittent access to the network
+
+        // created here but scheduled in onResume and cancelled in onPause
+        mDiscoverServerTimerTask = new TimerTask() {
+            @Override
+            public void run() {
+                String TAG = "ServerDiscoveryTimerTask";
+                SharedPreferences prefs = getSharedPreferences(getString(R.string.preferences_file_key),
+                        Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+
+                if(prefs.getBoolean(getString(R.string.prefs_use_server_discovery), true))
+                {
+                    Log.d(TAG, "Begin server discovery");
+                    ServerDiscovery.DiscoveryResult discoveryResult =
+                            ServerDiscovery.findServer(getApplicationContext());
+                    if(discoveryResult == null)
+                    {
+                        Log.i(TAG, "Failed to find server");
+                        return;
+                    }
+
+                    Log.i(TAG, "Found server. Base address is " + discoveryResult.serverBaseAddress);
+
+                    editor.putString(
+                            getString(R.string.prefs_server_protocol),
+                            discoveryResult.protocol);
+                    editor.putString(
+                            getString(R.string.prefs_server_url),
+                            discoveryResult.ipAddress + ":" + discoveryResult.port);
+                    editor.putString(
+                            getString(R.string.prefs_server_base_address),
+                            discoveryResult.serverBaseAddress);
+                }
+            }
+        };
+        mDiscoverServerTimer = new Timer();
+        mDiscoverServerTimer.scheduleAtFixedRate(mDiscoverServerTimerTask, 1000, 15000);
     }
 
     @Override
