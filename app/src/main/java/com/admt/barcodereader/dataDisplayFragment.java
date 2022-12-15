@@ -74,6 +74,11 @@ public class dataDisplayFragment extends Fragment {
     private boolean mIsInStoppageMode = false;
     private HashMap<String, String> mStoppageReasons;
     private String mStoppageId = null;
+    private HashMap<String, String> mUserNames;
+    private String mUserId = null;
+    private HashMap<String, String> mUserIdObtainedValue;
+    private String mUserNameObtainedValue = null;
+    private int intValue;
 
     private Timer mGetUserStatusTimer = null;
     private TimerTask mGetUserStatusTimerTask = null;
@@ -134,6 +139,8 @@ public class dataDisplayFragment extends Fragment {
         MainActivity mainActivity = (MainActivity) getActivity();
         mDataDisplayInteractionCallback = (onDataDisplayInteraction) mainActivity;
         mStoppageReasons = new HashMap<String, String>();
+        mUserNames = new HashMap<String, String>();
+        mUserIdObtainedValue = new HashMap<String, String>();
         mGetUserStatusTimerTask = new TimerTask() {
             @Override
             public void run() {
@@ -195,9 +202,14 @@ public class dataDisplayFragment extends Fragment {
             @Override
             public void afterTextChanged(Editable editable) {
 
-                String UserId = editable.toString();
                 if(!mIsInStoppageMode || mStoppageId != null) {
-                    updateUserStatusIndicator(UserId);
+                    try {
+                        String UserId = editable.toString();
+                        updateUserStatusIndicator(UserId);
+                    }
+                    catch (Exception e) {
+                        e.printStackTrace();
+                    }
                 }
 
             }
@@ -315,6 +327,8 @@ public class dataDisplayFragment extends Fragment {
                     if (mHeartbeatCounter == 0) {
                         setStations();
                         getStoppageReasons();
+                        getUserNames();
+                        getUserIdsForUserNames();
                     } else {
                         String serverAddress = getUrlFromIpAddress(ipAddress);
                         checkServerConnected(serverAddress);
@@ -466,7 +480,7 @@ public class dataDisplayFragment extends Fragment {
     /**
      * Sets the code displayed in the tbUserIdValue text box
      */
-    void setDisplayedUserIdValue(final String newUserIdValue) {
+    void setDisplayedUserIdValue(final String newUserNameValue, String newUserIdValue) {
         mIsInStoppageMode = false;
         // Get a handler that can be used to post to the main thread
         Handler mainHandler = new Handler(getContext().getMainLooper());
@@ -482,7 +496,7 @@ public class dataDisplayFragment extends Fragment {
                         .findViewById(R.id.tbUserIdValue));
 
                 TextView tvUserIdLabel = (TextView) (getActivity().findViewById(R.id.tvUserIdLable));
-                String userIdLabel = getResources().getString(R.string.user_id_label);
+                String userIdLabel = "User:";
                 tvUserIdLabel.setText(userIdLabel);
 
                 SharedPreferences preferences = getContext().getSharedPreferences(
@@ -521,8 +535,8 @@ public class dataDisplayFragment extends Fragment {
                     clUserStatusContainer.setVisibility(View.GONE);
                 }
 
-                tbUserIdValue.setText(newUserIdValue);
-                updateUserStatusIndicator(newUserIdValue);
+                tbUserIdValue.setText(newUserNameValue);
+                updateUserStatusIndicator(newUserNameValue);
 
                 TextView tvStoppageLabel = (TextView) getActivity().findViewById(R.id.tvStoppageDescriptionLabel);
                 EditText etStoppageDesc = (EditText) getActivity().findViewById(R.id.etStoppageDescription);
@@ -571,7 +585,7 @@ public class dataDisplayFragment extends Fragment {
                         Context.MODE_PRIVATE);
 
                 TextView tvUserIdLabel = (TextView) (getActivity().findViewById(R.id.tvUserIdLable));
-                String stoppageLabel = "Stoppage:";
+                String stoppageLabel = "Problem:";
                 tvUserIdLabel.setText(stoppageLabel);
 
                 TextView tbstoppageIdValue = (TextView) (getActivity()
@@ -618,7 +632,10 @@ public class dataDisplayFragment extends Fragment {
             if (prefix.equals(userPrefix)) {
                 mIsInStoppageMode = false;
                 mStoppageId = null;
-                setDisplayedUserIdValue(barcodeValue);
+                mUserId = barcodeValue;
+                String UserIdValue = (mUserId);
+                String UserNameValue = mUserNames.get(barcodeValue);
+                setDisplayedUserIdValue(UserNameValue, UserIdValue);
             } else if (prefix.equals(stoppagePrefix)) {
                 String stoppageReason = mStoppageReasons.get(barcodeValue);
                 if (stoppageReason != null) {
@@ -709,15 +726,24 @@ public class dataDisplayFragment extends Fragment {
                                     boolean quantityComplete = preferences.getBoolean(
                                             getString(R.string.preferences_quantity_complete), false);
 
-                                    if (useFullscreenConfirmations)
-                                        mDataDisplayInteractionCallback.onClockedOff(params.get("jobId"));
+                                    if (quantityComplete)
+                                        requestQuantityComplete(Integer.parseInt(responseValues.get("logRef")));
+
+                                    if (useFullscreenConfirmations) {
+                                        if (quantityComplete) {
+                                            requestQuantityComplete(Integer.parseInt(responseValues.get("logRef")));
+                                            mDataDisplayInteractionCallback.onClockedOff(params.get("jobId"));
+                                        }else {
+                                            mDataDisplayInteractionCallback.onClockedOff(params.get("jobId"));
+                                        }
+                                    }
                                     else {
+                                        if (quantityComplete)
+                                            requestQuantityComplete(Integer.parseInt(responseValues.get("logRef")));
                                         screenMsg = "Clocked OFF";
                                         textColour = "949ace";
                                     }
 
-                                    if (quantityComplete)
-                                        requestQuantityComplete(Integer.parseInt(responseValues.get("logRef")));
                                 } else if (responseState.equals("stoppageOn")) {
                                     if (useFullscreenConfirmations)
                                         mDataDisplayInteractionCallback.onStoppageStart(
@@ -797,7 +823,7 @@ public class dataDisplayFragment extends Fragment {
                 getString(R.string.preferences_station_name), "");
 
         String userPrefix = preferences.getString(
-                getString(R.string.preferences_user_prefix), "");
+                getString(R.string.preferences_user_prefix), "user_");
 
         Spinner spStationIdValue = (Spinner) (getActivity().findViewById(R.id.spStationIdValue));
         EditText tbUserIdValue = (EditText) (getActivity().findViewById(R.id.tbUserIdValue));
@@ -813,9 +839,23 @@ public class dataDisplayFragment extends Fragment {
         if (mIsInStoppageMode == false) {
             userIdValue = tbUserIdValue.getText().toString();
 
-            // if user prefix absent add it, this allows only number section to be entered
-            if ((userIdValue.length() < 5) || !(userIdValue.substring(0, 5).equals(userPrefix)))
-                userIdValue = userPrefix + userIdValue;
+            try {
+                if (userIdValue.startsWith("00")) {
+                    if (!userIdValue.startsWith("user_")) {
+                        userIdValue = "user_" + userIdValue;
+                    }
+                } else {
+                    if (userIdValue.startsWith("user_")) {
+                        userIdValue = userIdValue.substring("user_".length());
+                        userIdValue = mUserIdObtainedValue.get(userIdValue);
+                    } else {
+                        userIdValue = mUserIdObtainedValue.get(userIdValue);
+                    }
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
         }
 
         String jobIdValue = tbJobIdValue.getText().toString();
@@ -1020,7 +1060,7 @@ public class dataDisplayFragment extends Fragment {
         tvUserIdLabel.setText(userIdLabel);
 
         if (!rememberUserPref) {
-            setDisplayedUserIdValue("");
+            setDisplayedUserIdValue("", "");
         }
 
         setDisplayedJobIdValue("");
@@ -1312,6 +1352,230 @@ public class dataDisplayFragment extends Fragment {
         }
     }
 
+    public void getUserNames() {
+
+        SharedPreferences preferences = getContext().getSharedPreferences(
+                getString(R.string.preferences_file_key),
+                Context.MODE_PRIVATE);
+        String ipAddress = preferences.getString(
+                getString(R.string.prefs_server_base_address), "");
+
+        if (ipAddress == "") {
+            return;
+        } else {
+
+            String path = getResources().getString(R.string.server_users_path);
+
+            String serverUrl = ipAddress + path;
+
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("request", "getUserTableData");
+            params.put("tableOrdering", "byAlphabetic");
+
+            Log.d(TAG, "Parameters- " + params);
+
+            String uri = buildUri(serverUrl, params);
+
+            Log.d(TAG, "Server Address" + uri);
+
+            Log.d(TAG, "*****************************************************");
+
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, uri, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            Log.d(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: ");
+
+                            String status = "";
+
+                            try {
+                                status = response.getString("status");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            if (status.equals("success")) {
+                                try {
+
+                                    JSONArray jsonUserNamesArray = response.getJSONArray("result");
+                                    JSONObject jsonUserName;
+
+                                    mUserNames.clear();
+
+                                    for (int i = 0, size = jsonUserNamesArray.length(); i < size; i++) {
+                                        jsonUserName = jsonUserNamesArray.getJSONObject(i);
+                                        mUserNames.put(
+                                                jsonUserName.getString("userId"),
+                                                jsonUserName.getString("userName")
+                                        );
+                                    }
+
+                                    Log.d(TAG, "Got updated users list");
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            } else {
+
+                                String screenMsg = null;
+                                try {
+                                    screenMsg = "Error- " + response.getString("result");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+
+                                    screenMsg = "Error requesting User Names";
+                                }
+
+                                Toast.makeText(getContext(),
+                                                screenMsg,
+                                                Toast.LENGTH_LONG)
+                                        .show();
+                                Log.d(TAG, "$$ Error requesting User Names- " + screenMsg);
+                            }
+
+                            //TODO: fill in response functionality
+
+                            Log.d(TAG, "Attempted to retrieve User Names" + response.toString());
+
+                            mDataDisplayInteractionCallback.onBarcodeReadHandled();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            handleRequestError(error);
+                        }
+                    }) {
+                @Override
+                public Map<String, String> getParams()//ToDo not working, replaced with buildUri method
+                {
+                    return null;
+                }
+
+                @Override
+                public String getBodyContentType() {
+                    return "application/x-www-form-urlencoded; charset=UTF-8";
+                }
+            };
+            Log.d(TAG, "Request URL-" + request.getUrl());
+            //request.setShouldCache(false);
+            mRequestQueue.add(request);
+        }
+    }
+
+    public void getUserIdsForUserNames() {
+
+        SharedPreferences preferences = getContext().getSharedPreferences(
+                getString(R.string.preferences_file_key),
+                Context.MODE_PRIVATE);
+        String ipAddress = preferences.getString(
+                getString(R.string.prefs_server_base_address), "");
+
+        if (ipAddress == "") {
+            return;
+        } else {
+
+            String path = getResources().getString(R.string.server_users_path);
+
+            String serverUrl = ipAddress + path;
+
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("request", "getUserTableData");
+            params.put("tableOrdering", "byAlphabetic");
+
+            Log.d(TAG, "Parameters- " + params);
+
+            String uri = buildUri(serverUrl, params);
+
+            Log.d(TAG, "Server Address" + uri);
+
+            Log.d(TAG, "*****************************************************");
+
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, uri, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            Log.d(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: ");
+
+                            String status = "";
+
+                            try {
+                                status = response.getString("status");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            if (status.equals("success")) {
+                                try {
+
+                                    JSONArray jsonUserNamesArray = response.getJSONArray("result");
+                                    JSONObject jsonUserName;
+
+                                    mUserIdObtainedValue.clear();
+
+                                    for (int i = 0, size = jsonUserNamesArray.length(); i < size; i++) {
+                                        jsonUserName = jsonUserNamesArray.getJSONObject(i);
+                                        mUserIdObtainedValue.put(
+                                                jsonUserName.getString("userName"),
+                                                jsonUserName.getString("userId")
+                                        );
+                                    }
+
+                                    Log.d(TAG, "Got updated users list");
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            } else {
+
+                                String screenMsg = null;
+                                try {
+                                    screenMsg = "Error- " + response.getString("result");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+
+                                    screenMsg = "Error requesting User Ids";
+                                }
+
+                                Toast.makeText(getContext(),
+                                                screenMsg,
+                                                Toast.LENGTH_LONG)
+                                        .show();
+                                Log.d(TAG, "$$ Error requesting User Ids- " + screenMsg);
+                            }
+
+                            //TODO: fill in response functionality
+
+                            Log.d(TAG, "Attempted to retrieve User Ids" + response.toString());
+
+                            mDataDisplayInteractionCallback.onBarcodeReadHandled();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            handleRequestError(error);
+                        }
+                    }) {
+                @Override
+                public Map<String, String> getParams()//ToDo not working, replaced with buildUri method
+                {
+                    return null;
+                }
+
+                @Override
+                public String getBodyContentType() {
+                    return "application/x-www-form-urlencoded; charset=UTF-8";
+                }
+            };
+            Log.d(TAG, "Request URL-" + request.getUrl());
+            //request.setShouldCache(false);
+            mRequestQueue.add(request);
+        }
+    }
+
     private void setSendBtnEnabled(boolean enabled) {
         Button btnSend = (Button) getActivity().findViewById(R.id.btnSend);
         btnSend.setEnabled(enabled);
@@ -1465,7 +1729,7 @@ public class dataDisplayFragment extends Fragment {
     public void updateUserStatusIndicator(String userId) {
         // needs a valid user id, otherwise blank indicator
 
-        if (userId.length() == 0 || userId == null || userId == "" || userId == " "){
+        if (userId.length() == 0 || userId == null || userId == "" || userId == " " || userId == "00"){
             Handler mainHandler = new Handler(getContext().getMainLooper());
 
             Runnable runnable = new Runnable() {
@@ -1500,10 +1764,6 @@ public class dataDisplayFragment extends Fragment {
 
             return;
         }
-        if (!userId.startsWith("user_")) {
-            userId = "user_" + userId;
-        }
-
         SharedPreferences preferences = getContext().getSharedPreferences(
                 getString(R.string.preferences_file_key),
                 Context.MODE_PRIVATE);
@@ -1521,6 +1781,23 @@ public class dataDisplayFragment extends Fragment {
             String path = "/timelogger/scripts/server/current_users.php";
 
             String serverUrl = ipAddress + path;
+            try {
+                if (userId.startsWith("00")) {
+                    if (!userId.startsWith("user_")) {
+                        userId = "user_" + userId;
+                    }
+                } else {
+                    if (userId.startsWith("user_")) {
+                        userId = userId.substring("user_".length());
+                        userId = mUserIdObtainedValue.get(userId);
+                    } else {
+                        userId = mUserIdObtainedValue.get(userId);
+                    }
+                }
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
 
             Map<String, String> params = new HashMap<String, String>();
             params.put("request", "GetUserStatus");

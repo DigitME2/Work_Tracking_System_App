@@ -110,9 +110,6 @@ public class MainActivity<mDiscoverServerTimerTask> extends AppCompatActivity
         getSupportFragmentManager().beginTransaction()
                 .add(R.id.dataDisplayFragmentContainer, mDataDisplayFragment).commit();
 
-        // As this app is expected to only have intermittent access to the network
-
-        // created here but scheduled in onResume and cancelled in onPause
         mDiscoverServerTimerTask = new TimerTask() {
             @Override
             public void run() {

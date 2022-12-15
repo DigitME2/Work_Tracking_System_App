@@ -60,7 +60,7 @@
                 android:id="@+id/tbServerURL"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/ServerURLLabel"
+                android:hint="@string/hint_settings_server_base_address"
                 android:importantForAutofill="no"
                 android:inputType="textUri" />
 
@@ -185,6 +185,13 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Enable Vibration" />
+
+            <TextView
+                android:id="@+id/tvAppVersion"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:text="Version: v2.15" />
+
 
         </LinearLayout>
     </ScrollView>
