@@ -3,12 +3,16 @@
     <string name="user_id_placeholder_text">Scan a User Id</string>
     <string name="job_id_placeholder_text">Scan a Job Id</string>
     <string name="job_id_label">Job Id:</string>
-    <string name="user_id_label">User Id:</string>
-    <string name="stoppage_id_label">Stoppage:</string>
+    <string name="user_id_label">User:</string>
+    <string name="stoppage_id_label">Problem:</string>
     <string name="station_label">Station:</string>
     <string name="send">Send</string>
     <string name="title_activity_settings">Settings</string>
     <string name="server_client_input_path">/timelogger/scripts/server/client_input.php</string>
+
+    <string name="label_settings_server_base_address">Server Base Address</string>
+    <string name="hint_settings_server_base_address">http://xxx.xxx.xxx.xxx:yy</string>
+    <string name="server_users_path">/timelogger/scripts/server/users.php</string>
     <string name="server_stations_path">/timelogger/scripts/server/scanners.php</string>
     <string name="server_stoppages_path">/timelogger/scripts/server/stoppages.php</string>
     <string name="default_user_prefix">user_</string>
@@ -126,7 +130,9 @@
     <string name="serverPort">Server Port</string>
     <string name="preferences_file_key" translatable="false">com.admt.barcodereader.prefs</string>
     <string name="preferences_server_address" translatable="false">serverAddress</string>
-    <string name="preferences_server_port" translatable="false">serverPort</string>
+    <string name="prefs_server_protocol" translatable="false">prefsServerProtocol</string>
+    <string name="prefs_server_url" translatable="false">prefsServerUrl</string>
+    <string name="prefs_server_base_address" translatable="false">prefsServerBaseAddress</string>
     <string name="preferences_password" translatable="false">password</string>
     <string name="preferences_use_front_camera" translatable="false">useFrontCamera</string>
     <string name="preferences_rework_level_1_name" translatable="false">reworkLevel1Name</string>
@@ -171,11 +177,11 @@
     <string name="job_status_label">Status:</string>
     <string name="app_id_name_label">App ID name (used if station name not set)</string>
     <string name="app_id_name_hint">App identifying name</string>
-    <string name="default_app_id_name">ProcessTimeTrackerApp_V1.1</string>
+    <string name="default_app_id_name">1</string>
 
     <string name="quantity_complete_alert_message">Enter Quantity Complete-</string>
 
-    <string name="app_version">App_V1.1</string>
+    <string name="app_version">v2.15</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
@@ -191,4 +197,5 @@
     <string name="attachment_summary_on">Automatically download attachments for incoming emails
     </string>
     <string name="attachment_summary_off">Only download attachments when manually requested</string>
+    <string name="prefs_use_server_discovery">true</string>
 </resources>

@@ -2,13 +2,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="@string/user_id_placeholder_text">
+    android:layout_height="match_parent">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/clDataDisplayLayout"
         android:layout_width="match_parent"
-        android:layout_height="329dp"
+        android:layout_height="match_parent"
         android:descendantFocusability="beforeDescendants"
         android:focusable="true"
         android:focusableInTouchMode="true">
@@ -17,6 +16,7 @@
             android:id="@+id/tvStationIdLable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginVertical="16dp"
             android:layout_marginStart="16dp"
             android:labelFor="@id/spStationIdValue"
             android:text="@string/station_label"
@@ -40,6 +40,7 @@
             android:id="@+id/tvUserIdLable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginVertical="16dp"
             android:layout_marginStart="16dp"
             android:labelFor="@id/tbUserIdValue"
             android:text="@string/user_id_label"
@@ -57,7 +58,7 @@
             android:layout_marginEnd="16dp"
             android:ems="10"
             android:hint="@string/user_id_placeholder_text"
-            android:inputType="number"
+            android:inputType="text"
             android:nextFocusDown="@id/tbJobIdValue"
             android:nextFocusForward="@id/tbJobIdValue"
             android:textSize="20sp"
@@ -69,6 +70,7 @@
             android:id="@+id/tvJobIdLable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginVertical="16dp"
             android:layout_marginStart="16dp"
             android:labelFor="@id/tbJobIdValue"
             android:text="@string/job_id_label"
@@ -97,6 +99,7 @@
             android:id="@+id/tvStatusLable"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginVertical="16dp"
             android:layout_marginStart="16dp"
             android:labelFor="@id/spStationIdValue"
             android:text="@string/job_status_label"
@@ -123,15 +126,16 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
+            android:layout_marginVertical="16dp"
             android:labelFor="@id/etStoppageDescription"
             android:text="@string/stoppage_description_box_title"
             android:textSize="20sp"
-            android:visibility="invisible"
-            app:layout_constraintBottom_toTopOf="@+id/buttonsLowerSet"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="@+id/tvStatusLable"
             app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/tvStatusLable" />
+
 
         <EditText
             android:id="@+id/etStoppageDescription"
@@ -143,21 +147,68 @@
             android:hint="@string/stoppage_description_box_placeholder"
             android:inputType="text"
             android:textSize="20sp"
-            android:visibility="invisible"
+            android:visibility="gone"
             app:layout_constraintBaseline_toBaselineOf="@id/tvStoppageDescriptionLabel"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toEndOf="@+id/tvJobIdLable" />
 
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/clUserStatusContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:visibility="visible"
+            android:background="@drawable/user_status_border"
+            app:layout_constraintTop_toBottomOf="@+id/spJobStatus"
+            >
+
+            <TextView
+                android:id="@+id/tvUserStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="20sp"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tvUserStatusJobId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="20sp"
+                app:layout_constraintTop_toBottomOf="@+id/tvUserStatus" />
+
+            <TextView
+                android:id="@+id/tvUserStatusProductId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="20sp"
+                app:layout_constraintTop_toBottomOf="@+id/tvUserStatusJobId" />
+
+            <TextView
+                android:id="@+id/tvUserStatusStationId"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textSize="20sp"
+                app:layout_constraintTop_toBottomOf="@+id/tvUserStatusProductId" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+        />
 
         <LinearLayout
             android:id="@+id/buttonsLowerSet"
             style="?android:attr/buttonBarStyle"
             android:layout_width="0dp"
-            android:layout_height="61dp"
+            android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
-            android:layout_marginBottom="16dp"
             android:layout_weight="1"
             android:orientation="horizontal"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -173,6 +224,7 @@
                 android:layout_height="match_parent"
                 android:layout_marginEnd="16dp"
                 android:layout_weight="1"
+                android:paddingVertical="20dp"
                 android:elevation="8dp"
                 android:text="@android:string/cancel"
                 app:layout_constraintStart_toStartOf="parent"
@@ -184,6 +236,7 @@
                 android:layout_height="match_parent"
                 android:layout_weight="2"
                 android:backgroundTint="@color/submit_button_color_state_list"
+                android:paddingVertical="20dp"
                 android:elevation="8dp"
                 android:focusableInTouchMode="false"
                 android:text="@string/send"
@@ -195,6 +248,7 @@
                 app:layout_constraintTop_toBottomOf="@+id/linearLayout" />
 
         </LinearLayout>
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </FrameLayout>
