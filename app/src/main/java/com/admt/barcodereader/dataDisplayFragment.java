@@ -58,6 +58,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.TreeMap;
 
 
 /**
@@ -74,11 +75,9 @@ public class dataDisplayFragment extends Fragment {
     private boolean mIsInStoppageMode = false;
     private HashMap<String, String> mStoppageReasons;
     private String mStoppageId = null;
-    private HashMap<String, String> mUserNames;
+    private TreeMap<String, String> mUserNames;
     private String mUserId = null;
-    private HashMap<String, String> mUserIdObtainedValue;
-    private String mUserNameObtainedValue = null;
-    private int intValue;
+    private TreeMap<String, String> mUserIdObtainedValue;
 
     private Timer mGetUserStatusTimer = null;
     private TimerTask mGetUserStatusTimerTask = null;
@@ -139,8 +138,8 @@ public class dataDisplayFragment extends Fragment {
         MainActivity mainActivity = (MainActivity) getActivity();
         mDataDisplayInteractionCallback = (onDataDisplayInteraction) mainActivity;
         mStoppageReasons = new HashMap<String, String>();
-        mUserNames = new HashMap<String, String>();
-        mUserIdObtainedValue = new HashMap<String, String>();
+        mUserNames = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        mUserIdObtainedValue = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
         mGetUserStatusTimerTask = new TimerTask() {
             @Override
             public void run() {
@@ -150,6 +149,7 @@ public class dataDisplayFragment extends Fragment {
                 try {
                     EditText etUserID = (EditText) getActivity().findViewById(R.id.tbUserIdValue);
                     String UserID = etUserID.getText().toString();
+                    UserID = UserID.trim();
                     updateUserStatusIndicator(UserID);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -205,6 +205,7 @@ public class dataDisplayFragment extends Fragment {
                 if(!mIsInStoppageMode || mStoppageId != null) {
                     try {
                         String UserId = editable.toString();
+                        UserId = UserId.trim();
                         updateUserStatusIndicator(UserId);
                     }
                     catch (Exception e) {
@@ -838,6 +839,7 @@ public class dataDisplayFragment extends Fragment {
 
         if (mIsInStoppageMode == false) {
             userIdValue = tbUserIdValue.getText().toString();
+            userIdValue = userIdValue.trim();
 
             try {
                 if (userIdValue.startsWith("00")) {
@@ -859,6 +861,7 @@ public class dataDisplayFragment extends Fragment {
         }
 
         String jobIdValue = tbJobIdValue.getText().toString();
+        jobIdValue = jobIdValue.trim();
 
         String jobStatus = spJobStatus.getSelectedItem().toString();
         jobStatus = getSystemWorkStatus(jobStatus);
@@ -1729,7 +1732,12 @@ public class dataDisplayFragment extends Fragment {
     public void updateUserStatusIndicator(String userId) {
         // needs a valid user id, otherwise blank indicator
 
-        if (userId.length() == 0 || userId == null || userId == "" || userId == " " || userId == "00"){
+        String UserID = mUserIdObtainedValue.get(userId);
+        UserID = "user_" + UserID;
+        UserID = UserID.trim();
+        String USERID = mUserNames.get(userId);
+
+        if (userId.length() == 0 || userId == null || userId == "" || userId == " " || userId == "00" || userId == UserID || userId == USERID){
             Handler mainHandler = new Handler(getContext().getMainLooper());
 
             Runnable runnable = new Runnable() {
