@@ -335,7 +335,7 @@ public class dataDisplayFragment extends Fragment {
                         checkServerConnected(serverAddress);
                     }
                     mHeartbeatCounter++;
-                    if (mHeartbeatCounter > 10) {
+                    if (mHeartbeatCounter > 3) {
                         mHeartbeatCounter = 0;
                     }
                 }
@@ -371,12 +371,19 @@ public class dataDisplayFragment extends Fragment {
 
             Log.d(TAG, "checkServerConnected: Attempting to get server heartbeat at " + url);
 
-            StringRequest request = new StringRequest(Request.Method.GET, url,
-                    new Response.Listener<String>() {
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, url, null,
+                    new Response.Listener<JSONObject>() {
                         @Override
-                        public void onResponse(String response) {
+                        public void onResponse(JSONObject response) {
                             // got a response. Do nothing, since the server is reachable.
-                            if (!response.equals("{\"status\":\"success\",\"result\":\"\"}")) {
+                            String status = "";
+                            try {
+                                status = response.getString("status");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            if (!(status.equals("success")))
+                            {
                                 // Get a handler that can be used to post to the main thread
                                 Handler mainHandler = new Handler(getContext().getMainLooper());
 
@@ -635,8 +642,21 @@ public class dataDisplayFragment extends Fragment {
                 mStoppageId = null;
                 mUserId = barcodeValue;
                 String UserIdValue = (mUserId);
-                String UserNameValue = mUserNames.get(barcodeValue);
-                setDisplayedUserIdValue(UserNameValue, UserIdValue);
+                if (mUserNames.containsKey(mUserId)) {
+                    String UserNameValue = mUserNames.get(barcodeValue);
+                    setDisplayedUserIdValue(UserNameValue, UserIdValue);
+                } else {
+                    Handler mainHandler = new Handler(getContext().getMainLooper());
+
+                    Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getContext(), "Unknown User ID", Toast.LENGTH_LONG).show();
+                            onBtnCancelPressed();
+                        }
+                    };
+                    mainHandler.post(runnable);
+                }
             } else if (prefix.equals(stoppagePrefix)) {
                 String stoppageReason = mStoppageReasons.get(barcodeValue);
                 if (stoppageReason != null) {
@@ -650,16 +670,14 @@ public class dataDisplayFragment extends Fragment {
                     Runnable runnable = new Runnable() {
                         @Override
                         public void run() {
-                            Toast.makeText(
-                                            getContext(),
-                                            "Unknown stoppage ID",
-                                            Toast.LENGTH_LONG)
-                                    .show();
+                            Toast.makeText(getContext(), "Unknown Problem ID", Toast.LENGTH_LONG).show();
+                            onBtnCancelPressed();
                         }
                     };
 
                     mainHandler.post(runnable);
                 }
+
             } else {
                 setDisplayedJobIdValue(barcodeValue);
             }
@@ -1049,8 +1067,11 @@ public class dataDisplayFragment extends Fragment {
         Boolean rememberUserPref = preferences.getBoolean(
                 "rememberUser", false);
 
-        mIsInStoppageMode = false;
-        mStoppageId = null;
+        if(mIsInStoppageMode){
+            mIsInStoppageMode = false;
+            setDisplayedUserIdValue("", "");
+        }
+
 
         ArrayList<String> statusNames = new ArrayList<>(
                 Arrays.asList(getResources().getStringArray(R.array.list_work_status))
