@@ -175,7 +175,7 @@ public class dataDisplayFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 onBtnSendPressed();
-            }
+             }
         });
 
         Button btnCancel = (Button) view.findViewById(R.id.btnCancel);
@@ -880,6 +880,7 @@ public class dataDisplayFragment extends Fragment {
 
         String jobIdValue = tbJobIdValue.getText().toString();
         jobIdValue = jobIdValue.trim();
+//        jobIdValue.equalsIgnoreCase();
 
         String jobStatus = spJobStatus.getSelectedItem().toString();
         jobStatus = getSystemWorkStatus(jobStatus);
