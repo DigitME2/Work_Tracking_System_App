@@ -181,7 +181,7 @@
 
     <string name="quantity_complete_alert_message">Enter Quantity Complete-</string>
 
-    <string name="app_version">v2.16</string>
+    <string name="app_version">v2.17</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>

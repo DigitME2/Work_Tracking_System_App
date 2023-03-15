@@ -190,7 +190,7 @@
                 android:id="@+id/tvAppVersion"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:text="Version: v2.16" />
+                android:text="Version: v2.17" />
 
 
         </LinearLayout>
