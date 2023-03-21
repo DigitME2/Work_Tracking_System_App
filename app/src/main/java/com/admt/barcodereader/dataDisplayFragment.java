@@ -1,5 +1,4 @@
 package com.admt.barcodereader;
-import static android.view.View.INVISIBLE;
 
 import android.content.Context;
 import android.content.DialogInterface;
@@ -18,7 +17,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.fragment.app.Fragment;
 
-import android.telephony.PhoneNumberFormattingTextWatcher;
 import android.text.Editable;
 import android.text.Html;
 import android.text.InputType;
@@ -34,7 +32,6 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.widget.ToggleButton;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
@@ -43,7 +40,6 @@ import com.android.volley.Response;
 import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONArray;
@@ -75,9 +71,9 @@ public class dataDisplayFragment extends Fragment {
     private boolean mIsInStoppageMode = false;
     private HashMap<String, String> mStoppageReasons;
     private String mStoppageId = null;
-    private TreeMap<String, String> mUserNames;
+    private TreeMap<String, String> mUserIdtoUserNameMap;
     private String mUserId = null;
-    private TreeMap<String, String> mUserIdObtainedValue;
+    private TreeMap<String, String> mUserNametoUserIdMap;
 
     private Timer mGetUserStatusTimer = null;
     private TimerTask mGetUserStatusTimerTask = null;
@@ -138,8 +134,8 @@ public class dataDisplayFragment extends Fragment {
         MainActivity mainActivity = (MainActivity) getActivity();
         mDataDisplayInteractionCallback = (onDataDisplayInteraction) mainActivity;
         mStoppageReasons = new HashMap<String, String>();
-        mUserNames = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
-        mUserIdObtainedValue = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        mUserIdtoUserNameMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        mUserNametoUserIdMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
         mGetUserStatusTimerTask = new TimerTask() {
             @Override
             public void run() {
@@ -642,8 +638,8 @@ public class dataDisplayFragment extends Fragment {
                 mStoppageId = null;
                 mUserId = barcodeValue;
                 String UserIdValue = (mUserId);
-                if (mUserNames.containsKey(mUserId)) {
-                    String UserNameValue = mUserNames.get(barcodeValue);
+                if (mUserIdtoUserNameMap.containsKey(mUserId)) {
+                    String UserNameValue = mUserIdtoUserNameMap.get(barcodeValue);
                     setDisplayedUserIdValue(UserNameValue, UserIdValue);
                 } else {
                     Handler mainHandler = new Handler(getContext().getMainLooper());
@@ -858,23 +854,11 @@ public class dataDisplayFragment extends Fragment {
         if (mIsInStoppageMode == false) {
             userIdValue = tbUserIdValue.getText().toString();
             userIdValue = userIdValue.trim();
-
-            try {
-                if (userIdValue.startsWith("00")) {
-                    if (!userIdValue.startsWith("user_")) {
-                        userIdValue = "user_" + userIdValue;
-                    }
-                } else {
-                    if (userIdValue.startsWith("user_")) {
-                        userIdValue = userIdValue.substring("user_".length());
-                        userIdValue = mUserIdObtainedValue.get(userIdValue);
-                    } else {
-                        userIdValue = mUserIdObtainedValue.get(userIdValue);
-                    }
-                }
+            if (userIdValue.startsWith("00")) {              //todo: replace with regex
+                userIdValue = "user_" + userIdValue;
             }
-            catch (Exception e) {
-                e.printStackTrace();
+            if (!userIdValue.startsWith("user_")) {
+                userIdValue = mUserNametoUserIdMap.get(userIdValue);
             }
         }
 
@@ -885,12 +869,17 @@ public class dataDisplayFragment extends Fragment {
         String jobStatus = spJobStatus.getSelectedItem().toString();
         jobStatus = getSystemWorkStatus(jobStatus);
 
-        if ((!mIsInStoppageMode && userIdValue.equals("")) || jobIdValue.equals("") || stationIdValue.equals("")) {
+        if (userIdValue == null || (!mIsInStoppageMode && userIdValue.equals("")) || jobIdValue.equals("") || stationIdValue.equals("")) {
             params = null;
 
             String missingCode = "";
-
-            if (stationIdValue.equals("")) {
+            if (userIdValue == null){
+                Toast.makeText(getContext(),
+                                "Unknown User",
+                                Toast.LENGTH_LONG)
+                        .show();
+            }
+            else if (stationIdValue.equals("")) {
                 Toast.makeText(getContext(),
                                 Html.fromHtml("<font color='#" + "ffffff" + "' >" +
                                         "Station Id Missing" + "</font>"),
@@ -1425,11 +1414,11 @@ public class dataDisplayFragment extends Fragment {
                                     JSONArray jsonUserNamesArray = response.getJSONArray("result");
                                     JSONObject jsonUserName;
 
-                                    mUserNames.clear();
+                                    mUserIdtoUserNameMap.clear();
 
                                     for (int i = 0, size = jsonUserNamesArray.length(); i < size; i++) {
                                         jsonUserName = jsonUserNamesArray.getJSONObject(i);
-                                        mUserNames.put(
+                                        mUserIdtoUserNameMap.put(
                                                 jsonUserName.getString("userId"),
                                                 jsonUserName.getString("userName")
                                         );
@@ -1537,11 +1526,11 @@ public class dataDisplayFragment extends Fragment {
                                     JSONArray jsonUserNamesArray = response.getJSONArray("result");
                                     JSONObject jsonUserName;
 
-                                    mUserIdObtainedValue.clear();
+                                    mUserNametoUserIdMap.clear();
 
                                     for (int i = 0, size = jsonUserNamesArray.length(); i < size; i++) {
                                         jsonUserName = jsonUserNamesArray.getJSONObject(i);
-                                        mUserIdObtainedValue.put(
+                                        mUserNametoUserIdMap.put(
                                                 jsonUserName.getString("userName"),
                                                 jsonUserName.getString("userId")
                                         );
@@ -1751,15 +1740,21 @@ public class dataDisplayFragment extends Fragment {
 
 
 
-    public void updateUserStatusIndicator(String userId) {
+    public void updateUserStatusIndicator(String userIdentifierString) {
         // needs a valid user id, otherwise blank indicator
+        String userId = "";
+        userIdentifierString = userIdentifierString.trim();
+        if(userIdentifierString.startsWith("00")){    //todo: string to be changed regex
+            userId = "user_"+userIdentifierString;
+        }
+        else if(!userIdentifierString.startsWith("user_")) {
+            userId = mUserNametoUserIdMap.get(userIdentifierString);
+        }
+        else {
+            userId = userIdentifierString;
+        }
 
-        String UserID = mUserIdObtainedValue.get(userId);
-        UserID = "user_" + UserID;
-        UserID = UserID.trim();
-        String USERID = mUserNames.get(userId);
-
-        if (userId.length() == 0 || userId == null || userId == "" || userId == " " || userId == "00" || userId == UserID || userId == USERID){
+        if (userId == null || userId == "" || userId == " " || userId.length() == 0){
             Handler mainHandler = new Handler(getContext().getMainLooper());
 
             Runnable runnable = new Runnable() {
@@ -1811,23 +1806,6 @@ public class dataDisplayFragment extends Fragment {
             String path = "/timelogger/scripts/server/current_users.php";
 
             String serverUrl = ipAddress + path;
-            try {
-                if (userId.startsWith("00")) {
-                    if (!userId.startsWith("user_")) {
-                        userId = "user_" + userId;
-                    }
-                } else {
-                    if (userId.startsWith("user_")) {
-                        userId = userId.substring("user_".length());
-                        userId = mUserIdObtainedValue.get(userId);
-                    } else {
-                        userId = mUserIdObtainedValue.get(userId);
-                    }
-                }
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
 
             Map<String, String> params = new HashMap<String, String>();
             params.put("request", "GetUserStatus");
