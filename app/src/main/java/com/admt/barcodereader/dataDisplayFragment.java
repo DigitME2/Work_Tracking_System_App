@@ -869,7 +869,7 @@ public class dataDisplayFragment extends Fragment {
         String jobStatus = spJobStatus.getSelectedItem().toString();
         jobStatus = getSystemWorkStatus(jobStatus);
 
-        if (userIdValue == null || (!mIsInStoppageMode && userIdValue.equals("")) || jobIdValue.equals("") || stationIdValue.equals("")) {
+        if ((!mIsInStoppageMode) && (userIdValue == null ||  userIdValue.equals("")) || jobIdValue.equals("") || stationIdValue.equals("")) {
             params = null;
 
             String missingCode = "";
@@ -1751,7 +1751,9 @@ public class dataDisplayFragment extends Fragment {
             userId = mUserNametoUserIdMap.get(userIdentifierString);
         }
         else {
-            userId = userIdentifierString;
+            if (!mIsInStoppageMode) {
+                userId = userIdentifierString;
+            }
         }
 
         if (userId == null || userId == "" || userId == " " || userId.length() == 0){
