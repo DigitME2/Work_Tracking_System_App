@@ -46,6 +46,7 @@ public class settings_page extends AppCompatActivity
         Spinner spDefaultStation = (Spinner)findViewById(R.id.spDefaultStation);
         Switch swStaticStation = (Switch)findViewById(R.id.swStaticStation);
         Switch swRememberUser = (Switch)findViewById(R.id.swRememberUser);
+        Switch swRememberStation = (Switch)findViewById(R.id.swRememberStation);
         Switch swQuantityComplete = (Switch)findViewById(R.id.swQuantityComplete);
         EditText tbAppIdentifierName = (EditText)findViewById(R.id.tbAppIdentifierName);
         Spinner spDetectionDelay = (Spinner)findViewById(R.id.spDetectionDelay);
@@ -74,6 +75,8 @@ public class settings_page extends AppCompatActivity
                 "staticStation",false);
         boolean rememberUser = prefs.getBoolean(
                 "rememberUser",false);
+        boolean rememberStation = prefs.getBoolean(
+                "rememberStation",false);
         boolean quantityComplete = prefs.getBoolean(
                 getString(R.string.preferences_quantity_complete),false);
         String userPrefix = prefs.getString(
@@ -141,6 +144,7 @@ public class settings_page extends AppCompatActivity
 
         swStaticStation.setChecked(staticStation);
         swRememberUser.setChecked(rememberUser);
+        swRememberStation.setChecked(rememberStation);
         swEnableUserStatus.setChecked(enableUserStatus);
         swQuantityComplete.setChecked(quantityComplete);
         tbAppIdentifierName.setText(appIdentifierName);
@@ -201,12 +205,14 @@ public class settings_page extends AppCompatActivity
         Switch swEnableUserStatus = (Switch)findViewById(R.id.swEnableUserStatus);
         Switch swStaticStation = (Switch)findViewById(R.id.swStaticStation);
         Switch swRememberUser = (Switch)findViewById(R.id.swRememberUser);
+        Switch swRememberStation = (Switch)findViewById(R.id.swRememberStation);
         Switch swQuantityComplete = (Switch)findViewById(R.id.swQuantityComplete);
         EditText tbAppIdName = (EditText)findViewById(R.id.tbAppIdentifierName);
         Spinner spDetectionDelay = (Spinner)findViewById(R.id.spDetectionDelay);
         Switch swUseFullscreenConfirmations = (Switch)findViewById(R.id.swUseFullscreenConfirmations);
         Switch swAllowStoppageDescriptions = (Switch)findViewById(R.id.swAllowStoppageDescriptions);
         Switch swEnableVibration = (Switch)findViewById(R.id.swEnableVibration);
+        Spinner spStationIdValue = (Spinner)findViewById(R.id.spStationIdValue);
 
         int camOptionSelection = spCameraSelect.getSelectedItemPosition();
         boolean useFrontCamera = true;
@@ -228,6 +234,7 @@ public class settings_page extends AppCompatActivity
         boolean enableUserStatus = swEnableUserStatus.isChecked();
         boolean enableVibration = swEnableVibration.isChecked();
         boolean rememberUser = swRememberUser.isChecked();
+        boolean rememberStation = swRememberStation.isChecked();
 
         String appIdName = tbAppIdName.getText().toString();
 
@@ -246,6 +253,7 @@ public class settings_page extends AppCompatActivity
             editor.putBoolean("enableUserStatus", enableUserStatus);
             editor.putBoolean("staticStation", staticStation);
             editor.putBoolean("rememberUser", rememberUser);
+            editor.putBoolean("rememberStation", rememberStation);
             editor.putBoolean(getString(R.string.preferences_quantity_complete), quantityComplete);
             editor.putString(getString(R.string.preferences_app_id_name), appIdName);
             editor.putBoolean("enableVibration", enableVibration);

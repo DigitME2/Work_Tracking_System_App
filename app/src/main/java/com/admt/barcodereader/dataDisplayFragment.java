@@ -26,6 +26,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -77,6 +78,8 @@ public class dataDisplayFragment extends Fragment {
 
     private Timer mGetUserStatusTimer = null;
     private TimerTask mGetUserStatusTimerTask = null;
+    private SharedPreferences.Editor editor;
+    private Spinner spinner;
 
     // Not used in all places anymore, values got directly from text boxes, Maybe change??
     private class jobReworkData {
@@ -160,6 +163,7 @@ public class dataDisplayFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
+
         View view = inflater.inflate(R.layout.fragment_data_display, container, false);
 
         SharedPreferences prefs = getContext().getSharedPreferences(
@@ -181,6 +185,7 @@ public class dataDisplayFragment extends Fragment {
                 onBtnCancelPressed();
             }
         });
+
 
 
         EditText ettbUserIdValue = (EditText) view.findViewById(R.id.tbUserIdValue);
@@ -212,6 +217,7 @@ public class dataDisplayFragment extends Fragment {
             }
         });
 
+
         SharedPreferences preferences = getContext().getSharedPreferences(
                 getString(R.string.preferences_file_key), Context.MODE_PRIVATE);
         if (preferences.getBoolean("enableUserStatus", true)) {
@@ -224,21 +230,20 @@ public class dataDisplayFragment extends Fragment {
         }
 
         view.setBackgroundColor(Color.WHITE);
-//
-//        TextView tvStoppageLabel = (TextView) view.findViewById(R.id.tvStoppageDescriptionLabel);
-//        EditText etStoppageDesc = (EditText) view.findViewById(R.id.etStoppageDescription);
-//
-//        //tvStoppageLabel.setEnabled(false);
-//        tvStoppageLabel.setVisibility(View.INVISIBLE);
-//        //etStoppageDesc.setEnabled(false);
-//        etStoppageDesc.setVisibility(View.INVISIBLE);
 
 
         boolean staticStation = prefs.getBoolean(
                 getString(R.string.preferences_staticStation), false);
 
-        String stationName = prefs.getString(
-                getString(R.string.preferences_station_name), "");
+        boolean rememberStation = prefs.getBoolean(
+                "rememberStation", false);
+        String stationName = "";
+
+        if(staticStation){
+            stationName = prefs.getString(getString(R.string.preferences_station_name), "");
+        }else if(rememberStation){
+            stationName = prefs.getString(getString(R.string.lastSeenStationName), "");
+        }
 
         Set<String> stationSet = prefs.getStringSet(
                 getString(R.string.preferences_stationIds), new HashSet<String>());
@@ -251,14 +256,13 @@ public class dataDisplayFragment extends Fragment {
                 stationName = null;
             }
             setStationIdSpinner(view, stationList, stationName);
+
         } else {
             ArrayList<String> arrayList = new ArrayList<>();
             arrayList.add(stationName);
 
             setStationIdSpinner(view, arrayList, stationName);
         }
-
-
         return view;
     }
 
@@ -273,6 +277,7 @@ public class dataDisplayFragment extends Fragment {
 
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<>(thisContext, android.R.layout.simple_spinner_item, stationList);
         arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        
         spStationIdValue.setAdapter(arrayAdapter);
 
         int stationIndex = stationList.indexOf(Value);
@@ -280,6 +285,28 @@ public class dataDisplayFragment extends Fragment {
         if (Value != null && (stationIndex > 0)) {
             spStationIdValue.setSelection(stationIndex);
         }
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        Spinner spinner = (Spinner) getActivity().findViewById(R.id.spStationIdValue);
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long l) {
+                String locationName = (String) parent.getItemAtPosition(position);
+                SharedPreferences prefs = getContext().getSharedPreferences(getString(R.string.preferences_file_key), Context.MODE_PRIVATE);
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString(getString(R.string.lastSeenStationName), locationName);
+                editor.commit();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                //Do nothing;
+            }
+        });
+
     }
 
     @Override
@@ -465,7 +492,6 @@ public class dataDisplayFragment extends Fragment {
             mServerCheckTimer = null;
         }
     }
-
 
     private void setJobStatusOptions(ArrayList<String> optionList) {
         Spinner spinner;
@@ -1043,6 +1069,8 @@ public class dataDisplayFragment extends Fragment {
         } else
             transmitData(serverAddress);
     }
+
+
 
     private void onBtnCancelPressed() {
         resetDisplay();
