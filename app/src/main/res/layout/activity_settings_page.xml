@@ -135,6 +135,12 @@
                 android:text="@string/remember_user" />
 
             <Switch
+                android:id="@+id/swRememberStation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/remember_station" />
+
+            <Switch
                 android:id="@+id/swQuantityComplete"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -190,7 +196,7 @@
                 android:id="@+id/tvAppVersion"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:text="Version: v2.17.1" />
+                android:text="Version: v2.17.2" />
 
 
         </LinearLayout>
