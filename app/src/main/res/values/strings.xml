@@ -2,7 +2,7 @@
     <string name="app_name">Process Time Tracker</string>
     <string name="user_id_placeholder_text">Scan a User Id</string>
     <string name="job_id_placeholder_text">Scan a Job Id</string>
-    <string name="job_id_label">Job Id:</string>
+    <string name="job_id_label">Job:</string>
     <string name="user_id_label">User:</string>
     <string name="stoppage_id_label">Problem:</string>
     <string name="station_label">Location:</string>
@@ -13,6 +13,7 @@
     <string name="label_settings_server_base_address">Server Base Address</string>
     <string name="hint_settings_server_base_address">http://xxx.xxx.xxx.xxx:yy</string>
     <string name="server_users_path">/timelogger/scripts/server/users.php</string>
+    <string name="server_jobs_path">/timelogger/scripts/server/job_details.php</string>
     <string name="server_stations_path">/timelogger/scripts/server/scanners.php</string>
     <string name="server_stoppages_path">/timelogger/scripts/server/stoppages.php</string>
     <string name="default_user_prefix">user_</string>
@@ -142,6 +143,7 @@
     <string name="preferences_stationIds" translatable="false">stationIds</string>
     <string name="preferences_staticStation" translatable="false">staticStation</string>
     <string name="preferences_user_prefix" translatable="false">userPrefix</string>
+    <string name="preferences_job_prefix" translatable="false">jobPrefix</string>
     <string name="preferences_stoppages_prefix" translatable="false">stoppagesPrefix</string>
     <string name="preferences_product_prefix" translatable="false">productPrefix</string>
     <string name="preferences_quantity_complete" translatable="false">quantityComplete</string>
@@ -183,7 +185,7 @@
 
     <string name="quantity_complete_alert_message">Enter Quantity Complete-</string>
 
-    <string name="app_version">v2.17.2</string>
+    <string name="app_version">v3.0</string>
 
     <!-- Preference Titles -->
     <string name="messages_header">Messages</string>
