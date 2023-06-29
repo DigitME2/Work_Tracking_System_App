@@ -72,6 +72,9 @@ public class dataDisplayFragment extends Fragment {
     private boolean mIsInStoppageMode = false;
     private HashMap<String, String> mStoppageReasons;
     private String mStoppageId = null;
+    private TreeMap<String, String> mJobIdtoJobNameMap;
+    private String mJobId = null;
+    private TreeMap<String, String> mJobNametoJobIdMap;
     private TreeMap<String, String> mUserIdtoUserNameMap;
     private String mUserId = null;
     private TreeMap<String, String> mUserNametoUserIdMap;
@@ -137,6 +140,8 @@ public class dataDisplayFragment extends Fragment {
         MainActivity mainActivity = (MainActivity) getActivity();
         mDataDisplayInteractionCallback = (onDataDisplayInteraction) mainActivity;
         mStoppageReasons = new HashMap<String, String>();
+        mJobIdtoJobNameMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        mJobNametoJobIdMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
         mUserIdtoUserNameMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
         mUserNametoUserIdMap = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
         mGetUserStatusTimerTask = new TimerTask() {
@@ -352,6 +357,8 @@ public class dataDisplayFragment extends Fragment {
                         setStations();
                         getStoppageReasons();
                         getUserNames();
+                        getJobNamesForIds();
+                        getJobIdsForNames();
                         getUserIdsForUserNames();
                     } else {
                         String serverAddress = getUrlFromIpAddress(ipAddress);
@@ -580,9 +587,9 @@ public class dataDisplayFragment extends Fragment {
     }
 
     /**
-     * Sets the code displayed in the tbJobIdValue text box
+     * Sets the code displayed in the tbJobIdValue text box, if starts with 'job_'
      */
-    void setDisplayedJobIdValue(final String newJobIdValue) {
+    void setDisplayedJobIdValue(final String newJobNameValue) {
         // Get a handler that can be used to post to the main thread
         Handler mainHandler = new Handler(getContext().getMainLooper());
 
@@ -592,7 +599,26 @@ public class dataDisplayFragment extends Fragment {
                 TextView tbJobIdValue = (TextView) (getActivity()
                         .findViewById(R.id.tbJobIdValue));
 
-                tbJobIdValue.setText(newJobIdValue);
+                tbJobIdValue.setText(newJobNameValue);
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    /**
+     * Sets the code displayed in the tbJobIdValue text box, if starts with 'pdrt_'
+     */
+    void setDisplayedProductIdValue(final String newProductValue) {
+        // Get a handler that can be used to post to the main thread
+        Handler mainHandler = new Handler(getContext().getMainLooper());
+
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                TextView tbJobIdValue = (TextView) (getActivity()
+                        .findViewById(R.id.tbJobIdValue));
+
+                tbJobIdValue.setText(newProductValue);
             }
         };
         mainHandler.post(myRunnable);
@@ -654,9 +680,19 @@ public class dataDisplayFragment extends Fragment {
             String stoppagePrefix = preferences.getString(
                     "stoppagePrefix", "stpg_");
 
+            String jobPrefix = preferences.getString(
+                    "jobPrefix", "job_");
+
+            String productPrefix = preferences.getString(
+                    "productPrefix", "pdrt_");
+
             String prefix = "";
-            if (barcodeValue.length() >= 5) {
-                prefix = barcodeValue.substring(0, 5);
+            if (barcodeValue.startsWith("job_")){
+                prefix = barcodeValue.substring(0, 4);
+            } else {
+                if (barcodeValue.length() >= 5) {
+                    prefix = barcodeValue.substring(0, 5);
+                }
             }
 
             if (prefix.equals(userPrefix)) {
@@ -700,8 +736,27 @@ public class dataDisplayFragment extends Fragment {
                     mainHandler.post(runnable);
                 }
 
-            } else {
-                setDisplayedJobIdValue(barcodeValue);
+            } else if (prefix.equals(jobPrefix)) {
+                String jobName = mJobIdtoJobNameMap.get(barcodeValue);
+                if (jobName != null) {
+                    mJobId = barcodeValue;
+                    setDisplayedJobIdValue(jobName);
+                } else {
+                    Handler mainHandler = new Handler(getContext().getMainLooper());
+
+                    Runnable runnable = new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getContext(), "Unknown Job ID", Toast.LENGTH_LONG).show();
+                            onBtnCancelPressed();
+                        }
+                    };
+                    mainHandler.post(runnable);
+                }
+            }
+            else if (prefix.equals(productPrefix)){
+                String ProductIdValue = barcodeValue;
+                setDisplayedProductIdValue(ProductIdValue);
             }
 
             mCurrentBarcodeValue = barcodeValue;
@@ -866,6 +921,9 @@ public class dataDisplayFragment extends Fragment {
         String userPrefix = preferences.getString(
                 getString(R.string.preferences_user_prefix), "user_");
 
+        String jobPrefix = preferences.getString(
+                getString(R.string.preferences_job_prefix), "job_");
+
         Spinner spStationIdValue = (Spinner) (getActivity().findViewById(R.id.spStationIdValue));
         EditText tbUserIdValue = (EditText) (getActivity().findViewById(R.id.tbUserIdValue));
         EditText tbJobIdValue = (EditText) (getActivity().findViewById(R.id.tbJobIdValue));
@@ -880,7 +938,7 @@ public class dataDisplayFragment extends Fragment {
         if (mIsInStoppageMode == false) {
             userIdValue = tbUserIdValue.getText().toString();
             userIdValue = userIdValue.trim();
-            if (userIdValue.startsWith("00")) {              //todo: replace with regex
+            if (userIdValue.startsWith("00")) {    //todo: string to be changed regex
                 userIdValue = "user_" + userIdValue;
             }
             if (!userIdValue.startsWith("user_")) {
@@ -891,6 +949,19 @@ public class dataDisplayFragment extends Fragment {
         String jobIdValue = tbJobIdValue.getText().toString();
         jobIdValue = jobIdValue.trim();
 //        jobIdValue.equalsIgnoreCase();
+        if (jobIdValue.matches("0-9")){
+            jobIdValue = "job_" + jobIdValue;
+
+        }
+        else if (jobIdValue.startsWith("pdrt_")){
+            jobIdValue = jobIdValue;
+        }
+        else if (!jobIdValue.startsWith("job_")){
+            jobIdValue = mJobNametoJobIdMap.get(jobIdValue);
+        }
+        else {
+            jobIdValue = jobIdValue;
+        }
 
         String jobStatus = spJobStatus.getSelectedItem().toString();
         jobStatus = getSystemWorkStatus(jobStatus);
@@ -913,12 +984,12 @@ public class dataDisplayFragment extends Fragment {
                         .show();
             } else {
                 if (mIsInStoppageMode && userIdValue.equals("") && jobIdValue.equals(""))
-                    missingCode = "User & Job ID";
+                    missingCode = "User & Job";
                 else {
                     if (userIdValue.equals("") && !mIsInStoppageMode)
                         missingCode = "User ID";
                     else
-                        missingCode = "Job ID";
+                        missingCode = "Job";
                 }
 
                 Toast.makeText(getContext(),
@@ -1506,6 +1577,228 @@ public class dataDisplayFragment extends Fragment {
         }
     }
 
+    public void getJobNamesForIds() {
+
+        SharedPreferences preferences = getContext().getSharedPreferences(
+                getString(R.string.preferences_file_key),
+                Context.MODE_PRIVATE);
+        String ipAddress = preferences.getString(
+                getString(R.string.prefs_server_base_address), "");
+
+        if (ipAddress == "") {
+            return;
+        } else {
+
+            String path = getResources().getString(R.string.server_jobs_path);
+
+            String serverUrl = ipAddress + path;
+
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("request", "getJobList");
+
+            Log.d(TAG, "Parameters- " + params);
+
+            String uri = buildUri(serverUrl, params);
+
+            Log.d(TAG, "Server Address" + uri);
+
+            Log.d(TAG, "*****************************************************");
+
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, uri, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            Log.d(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: ");
+
+                            String status = "";
+
+                            try {
+                                status = response.getString("status");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            if (status.equals("success")) {
+                                try {
+
+                                    JSONArray jsonJobNamesArray = response.getJSONArray("result");
+                                    JSONObject jsonJobName;
+
+                                    mJobIdtoJobNameMap.clear();
+
+                                    for (int i = 0, size = jsonJobNamesArray.length(); i < size; i++) {
+                                        jsonJobName = jsonJobNamesArray.getJSONObject(i);
+                                        mJobIdtoJobNameMap.put(
+                                                jsonJobName.getString("jobId"),
+                                                jsonJobName.getString("jobName")
+                                        );
+                                    }
+
+                                    Log.d(TAG, "Got updated jobs list");
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            } else {
+
+                                String screenMsg = null;
+                                try {
+                                    screenMsg = "Error- " + response.getString("result");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+
+                                    screenMsg = "Error requesting Job Names";
+                                }
+
+                                Toast.makeText(getContext(),
+                                                screenMsg,
+                                                Toast.LENGTH_LONG)
+                                        .show();
+                                Log.d(TAG, "$$ Error requesting Job Names- " + screenMsg);
+                            }
+
+                            //TODO: fill in response functionality
+
+                            Log.d(TAG, "Attempted to retrieve Job Names" + response.toString());
+
+                            mDataDisplayInteractionCallback.onBarcodeReadHandled();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            handleRequestError(error);
+                        }
+                    }) {
+                @Override
+                public Map<String, String> getParams()//ToDo not working, replaced with buildUri method
+                {
+                    return null;
+                }
+
+                @Override
+                public String getBodyContentType() {
+                    return "application/x-www-form-urlencoded; charset=UTF-8";
+                }
+            };
+            Log.d(TAG, "Request URL-" + request.getUrl());
+            //request.setShouldCache(false);
+            mRequestQueue.add(request);
+        }
+    }
+
+    public void getJobIdsForNames() {
+
+        SharedPreferences preferences = getContext().getSharedPreferences(
+                getString(R.string.preferences_file_key),
+                Context.MODE_PRIVATE);
+        String ipAddress = preferences.getString(
+                getString(R.string.prefs_server_base_address), "");
+
+        if (ipAddress == "") {
+            return;
+        } else {
+
+            String path = getResources().getString(R.string.server_jobs_path);
+
+            String serverUrl = ipAddress + path;
+
+            Map<String, String> params = new HashMap<String, String>();
+            params.put("request", "getJobList");
+
+            Log.d(TAG, "Parameters- " + params);
+
+            String uri = buildUri(serverUrl, params);
+
+            Log.d(TAG, "Server Address" + uri);
+
+            Log.d(TAG, "*****************************************************");
+
+            JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, uri, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            Log.d(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: ");
+
+                            String status = "";
+
+                            try {
+                                status = response.getString("status");
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+
+                            if (status.equals("success")) {
+                                try {
+
+                                    JSONArray jsonJobIdsArray = response.getJSONArray("result");
+                                    JSONObject jsonJobId;
+
+                                    mJobNametoJobIdMap.clear();
+
+                                    for (int i = 0, size = jsonJobIdsArray.length(); i < size; i++) {
+                                        jsonJobId = jsonJobIdsArray.getJSONObject(i);
+                                        mJobNametoJobIdMap.put(
+                                                jsonJobId.getString("jobName"),
+                                                jsonJobId.getString("jobId")
+                                        );
+                                    }
+
+                                    Log.d(TAG, "Got updated jobs list");
+
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+
+                            } else {
+
+                                String screenMsg = null;
+                                try {
+                                    screenMsg = "Error- " + response.getString("result");
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+
+                                    screenMsg = "Error requesting Job Ids";
+                                }
+
+                                Toast.makeText(getContext(),
+                                                screenMsg,
+                                                Toast.LENGTH_LONG)
+                                        .show();
+                                Log.d(TAG, "$$ Error requesting Job Ids- " + screenMsg);
+                            }
+
+                            //TODO: fill in response functionality
+
+                            Log.d(TAG, "Attempted to retrieve Job Ids" + response.toString());
+
+                            mDataDisplayInteractionCallback.onBarcodeReadHandled();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            handleRequestError(error);
+                        }
+                    }) {
+                @Override
+                public Map<String, String> getParams()//ToDo not working, replaced with buildUri method
+                {
+                    return null;
+                }
+
+                @Override
+                public String getBodyContentType() {
+                    return "application/x-www-form-urlencoded; charset=UTF-8";
+                }
+            };
+            Log.d(TAG, "Request URL-" + request.getUrl());
+            //request.setShouldCache(false);
+            mRequestQueue.add(request);
+        }
+    }
+
     public void getUserIdsForUserNames() {
 
         SharedPreferences preferences = getContext().getSharedPreferences(
@@ -1868,7 +2161,7 @@ public class dataDisplayFragment extends Fragment {
                                         tvUserStatus.setBackgroundColor(getResources().getColor(R.color.clockOnConfirmationBackgroundColour));
                                         tvUserStatus.setTextColor(getResources().getColor(R.color.clockOnConfirmationTextColour));
 
-                                        String JobId = "Job ID: " + result.getString("jobId");
+                                        String JobId = "Job: " + result.getString("jobName");
                                         tvUserStatusJobId.setText(JobId);
                                         tvUserStatusJobId.setBackgroundColor(getResources().getColor(R.color.clockOnConfirmationBackgroundColour));
                                         tvUserStatusJobId.setTextColor(getResources().getColor(R.color.clockOnConfirmationTextColour));
